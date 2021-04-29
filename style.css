@@ -1,0 +1,47 @@
+body{
+    background:#666;
+}
+a{
+    cursor: pointer;
+}
+a:hover{
+    color: #f00;
+}
+
+input,textarea{
+    background: #ccc;
+    color:#000;
+    width: 200px;
+}
+
+textarea{
+    height: 200px;
+}
+
+input:not([type=button]):focus,textarea:focus{
+    background: #fff;
+    color:#000;
+}
+
+input[type=button]{
+    cursor: pointer;
+    width: auto;
+}
+
+input[type=button]:active{
+    background: #000;
+    color:#fff;
+}
+
+table tr td {
+    border: 1px solid #000;
+    border-radius: 10px;
+    padding: 4px;
+    vertical-align: top;
+    color: #ccc;
+}
+
+#WebConfigUrl {
+    width: 300px;
+}
+
