@@ -15,7 +15,7 @@ window.onload = function()
         width: 1280,
         height: 720,
         videoId: "6tKlnHZJZo4",
-        playerVars:{"controls":1},
+        playerVars:{"controls":0},
         events:{
             "onStateChange":function(e){
 
