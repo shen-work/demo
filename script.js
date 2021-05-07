@@ -73,17 +73,6 @@ function Main()
     System.session = JSON.parse(sessionStorage.shen||'{}');
 
     ServerTime(MenuLi);
-
-
-    var _open_id = "Test";
-    for(var _id in System.session.menu)
-    {
-        if( System.session.menu[_id].open=="open" )
-        {
-            _open_id = _id;
-        }
-    }
-    MenuClick(_open_id,"open");
 }
 
 function MenuLi()
@@ -123,8 +112,15 @@ function MenuLi()
     document.body.appendChild(div);
 
 
-
-    
+    var _open_id = "Test";
+    for(var _id in System.session.menu)
+    {
+        if( System.session.menu[_id].open=="open" )
+        {
+            _open_id = _id;
+        }
+    }
+    MenuClick(_open_id,"open");
 }
 
 
@@ -201,7 +197,24 @@ function MenuClick(id,act)
 
 function Test()
 {
+    var menu = {};
+    var login_word = "GOOGLE登入/註冊";
+
+
+    var btn = document.createElement("input");
+    btn.type = "button";
     
+    
+    btn.value = login_word;
+
+    menu = {
+        "btn":{
+            "html":btn
+        }
+    }
+
+    System.MainDiv.appendChild( RowMake(menu) );
+    MainDivSetTimeout();
 }
 
 function Member()
