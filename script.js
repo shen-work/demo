@@ -196,16 +196,33 @@ function Test()
 function Member()
 {
     var menu = {};
+    var login_word = "GOOGLE登入/註冊";
+
+    if(gapi.auth2.getAuthInstance().isSignedIn.get()==true)
+    {
+        login_word = "登出網站";
+
+    }
+
+
 
     var btn = document.createElement("input");
     btn.type = "button";
-    btn.value = "GOOGLE登入/註冊";
+
+    
+
+
+    btn.value = login_word;
     btn.addEventListener("click",function(){
 
         gapi.auth2.getAuthInstance().signIn().then(function(r){
 
-            console.log(r);
+            
+            DB.ref("member/"+r.Aa).set(r.gt);
 
+            alert("登入成功");
+            MenuClick(System.now_page,"open");
+            return;
 
         },function(err){
             alert("登入/註冊失敗");
