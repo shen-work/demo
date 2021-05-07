@@ -261,21 +261,28 @@ function Member()
 
             });
             
-
-            alert("登入成功");
+            var msg = document.createElement("div");
+            msg.innerHTML = "登入/註冊成功";
+            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert"}) );
+            
             MenuClick(System.now_page,"open");
             return;
 
         },function(err){
-            alert("登入/註冊失敗");
+            
+            var msg = document.createElement("div");
+            msg.innerHTML = "登入/註冊失敗";
+            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert"}) );
             return;
         });
     }
     function LogOut()
     {
         gapi.auth2.getAuthInstance().signOut();
-        alert("已登出網站");
-        MenuClick(System.now_page,"open");
+        
+        var msg = document.createElement("div");
+        msg.innerHTML = "已登出網站";
+        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert"}) );
         return;
     }
 }
@@ -659,18 +666,14 @@ function DBGetId(DB,path,func)
 }
 
 
-
-function OpenWindow(content,id = "OpenWindow",xy)
+function OpenWindow(content,config = {})
 {
+    var id = config.id||"OpenWindow";
+    var xy = config.xy;
+
     var detail = document.querySelector("#"+id);
     
-    var btn_close = document.createElement("input");
-    btn_close.type = "button";
-    btn_close.value = "關閉";
-    btn_close.addEventListener("click",function(){
-        //this.parentElement.style.display = "none";
-        this.parentElement.remove();
-    });
+    
 
     if(detail==null)
     {
@@ -678,14 +681,23 @@ function OpenWindow(content,id = "OpenWindow",xy)
         detail.className = "detail";
         detail.id = id;
         detail.setAttribute("draggable","true");
-
-        detail.appendChild(content);
-        detail.appendChild(btn_close);
     }
     else
     {
         detail.innerHTML = "";
-        detail.appendChild(content);
+    }
+
+    detail.appendChild(content);
+
+
+    if(config.close===true)
+    {
+        var btn_close = document.createElement("input");
+        btn_close.type = "button";
+        btn_close.value = "關閉";
+        btn_close.addEventListener("click",function(){
+            this.parentElement.remove();
+        });
         detail.appendChild(btn_close);
     }
 
@@ -694,19 +706,22 @@ function OpenWindow(content,id = "OpenWindow",xy)
         detail.style.left = xy.x+"px";
         detail.style.top = xy.y+"px";
     }
+    detail.style.display = "block";
 
-    detail.querySelectorAll("input[type=text],input[type=number],textarea").forEach(obj=>{
-        obj.addEventListener("focus",function(e){
-            detail.draggable = false;
-        });
-        obj.addEventListener("blur",function(e){
-            detail.draggable = true;
-        });
+
+    detail.addEventListener("dragend",function(e){
+
+        e.target.style.left = e.clientX - System.mousedown.offsetX;
+        e.target.style.top = e.clientY - System.mousedown.offsetY;
+        
     });
 
-    
-    detail.style.display = "block";
-    System.MainDiv.appendChild(detail);
+    detail.addEventListener("mousedown",function(e){
+        System.mousedown = e;
+    });
+
+
+    return detail;
 }
 
 //true手機行動裝置 false非手機
