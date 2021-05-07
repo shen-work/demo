@@ -145,7 +145,7 @@ function MenuClick(id,act)
                 div.style.height = "0px";
             });
             System.session.menu[id].open = "close";
-            sessionStorage.kfs = JSON.stringify(System.session);
+            sessionStorage.shen = JSON.stringify(System.session);
         }
         else
         {
@@ -257,16 +257,16 @@ function Member()
             
             var msg = document.createElement("div");
             msg.innerHTML = "登入/註冊成功";
-            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert"}) );
+            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
             
-            MenuClick(System.now_page,"open");
+            
             return;
 
         },function(err){
             
             var msg = document.createElement("div");
             msg.innerHTML = "登入/註冊失敗";
-            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert"}) );
+            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
             return;
         });
     }
@@ -277,7 +277,7 @@ function Member()
         
         var msg = document.createElement("div");
         msg.innerHTML = "已登出網站";
-        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
         return;
     }
 }
@@ -692,8 +692,16 @@ function OpenWindow(content,config = {})
         btn_close.value = "關閉";
         btn_close.addEventListener("click",function(){
             this.parentElement.remove();
+
+            if(config.close_ev!=undefined)
+            {
+                config.close_ev();
+            }
+
         });
         detail.appendChild(btn_close);
+
+
     }
 
     if(xy!=undefined)
