@@ -198,38 +198,27 @@ function Member()
     var menu = {};
     var login_word = "GOOGLE登入/註冊";
 
-    if(gapi.auth2.getAuthInstance().isSignedIn.get()==true)
-    {
-        login_word = "登出網站";
-
-    }
-
-
 
     var btn = document.createElement("input");
     btn.type = "button";
 
-    
+    if(gapi.auth2.getAuthInstance().isSignedIn.get()==true)
+    {
+        login_word = "登出網站";
+        btn.addEventListener("click",LogOut);
+    }
+    else
+    {
+        btn.addEventListener("click",Login);
+    }
 
+
+
+    
 
     btn.value = login_word;
-    btn.addEventListener("click",function(){
 
-        gapi.auth2.getAuthInstance().signIn().then(function(r){
-
-            
-            DB.ref("member/"+r.Aa).set(r.gt);
-
-            alert("登入成功");
-            MenuClick(System.now_page,"open");
-            return;
-
-        },function(err){
-            alert("登入/註冊失敗");
-            return;
-        });
     
-    });
 
     menu = {
         "btn":{
@@ -239,6 +228,39 @@ function Member()
 
     System.MainDiv.appendChild( RowMake(menu) );
     MainDivSetTimeout();
+
+
+
+    function Login()
+    {
+        gapi.auth2.getAuthInstance().signIn().then(function(r){
+
+            DB.ref("member/"+r.Aa).once("value",function(member){
+
+                if(member.val()==null)
+                {
+                    DB.ref("member/"+r.Aa).set(r.gt);
+                }
+
+            });
+            
+
+            alert("登入成功");
+            MenuClick(System.now_page,"open");
+            return;
+
+        },function(err){
+            alert("登入/註冊失敗");
+            return;
+        });
+    }
+    function LogOut()
+    {
+        gapi.auth2.getAuthInstance().signOut();
+        alert("已登出網站");
+        MenuClick(System.now_page,"open");
+        return;
+    }
 }
 
 
@@ -621,19 +643,6 @@ function DBGetId(DB,path,func)
 
 
 
-function Gapi(mode,func,errfunc)
-{
-    if(mode=="signIn")
-    {
-        gapi.auth2.getAuthInstance().signIn().then(function(_r){
-
-            func.apply(this,[_r]);
-
-        },function(err){
-            errfunc.apply(this,[err]);
-        });
-    }
-}
 
 //true手機行動裝置 false非手機
 function CheckMobile()
