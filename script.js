@@ -198,18 +198,15 @@ function MenuClick(id,act)
 function Test()
 {
     var menu = {};
-    var login_word = "GOOGLE登入/註冊";
 
 
-    var btn = document.createElement("input");
-    btn.type = "button";
+    var div = document.createElement("div");
     
-    
-    btn.value = login_word;
+    div.innerHTML = "測試用網站";
 
     menu = {
-        "btn":{
-            "html":btn
+        "0":{
+            "html":div
         }
     }
 
@@ -228,6 +225,17 @@ function Member()
 
     if(gapi.auth2.getAuthInstance().isSignedIn.get()==true)
     {
+        var g = gapi.auth2.getAuthInstance().currentUser.get().gt;
+        menu = {
+            "email":{
+                "span":"GOOGLE帳號",
+                "value":g.getEmail()
+            },
+            "name":{
+                "span":"姓名",
+                "value":g.getName()
+            }
+        };
         login_word = "登出網站";
         btn.addEventListener("click",LogOut);
     }
@@ -238,11 +246,9 @@ function Member()
 
     btn.value = login_word;
 
-    menu = {
-        "btn":{
-            "html":btn
-        }
-    }
+    menu.btn = {
+        "html":btn
+    };
 
     System.MainDiv.appendChild( RowMake(menu) );
     MainDivSetTimeout();
