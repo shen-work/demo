@@ -73,6 +73,17 @@ function Main()
     System.session = JSON.parse(sessionStorage.shen||'{}');
 
     ServerTime(MenuLi);
+
+
+    var _open_id = "Test";
+    for(var _id in System.session.menu)
+    {
+        if( System.session.menu[_id].open=="open" )
+        {
+            _open_id = _id;
+        }
+    }
+    MenuClick(_open_id,"open");
 }
 
 function MenuLi()
@@ -239,7 +250,13 @@ function Member()
 
                 if(member.val()==null)
                 {
-                    DB.ref("member/"+r.Aa).set(r.gt);
+                    var _data = JSON.parse(JSON.stringify(r.gt));
+
+                    for(var k in _data)
+                    if(_data[k]===undefined) delete _data[k];
+
+
+                    DB.ref("member/"+r.Aa).set(_data);
                 }
 
             });
@@ -643,6 +660,54 @@ function DBGetId(DB,path,func)
 
 
 
+function OpenWindow(content,id = "OpenWindow",xy)
+{
+    var detail = document.querySelector("#"+id);
+    
+    var btn_close = document.createElement("input");
+    btn_close.type = "button";
+    btn_close.value = "關閉";
+    btn_close.addEventListener("click",function(){
+        //this.parentElement.style.display = "none";
+        this.parentElement.remove();
+    });
+
+    if(detail==null)
+    {
+        detail = document.createElement("div");
+        detail.className = "detail";
+        detail.id = id;
+        detail.setAttribute("draggable","true");
+
+        detail.appendChild(content);
+        detail.appendChild(btn_close);
+    }
+    else
+    {
+        detail.innerHTML = "";
+        detail.appendChild(content);
+        detail.appendChild(btn_close);
+    }
+
+    if(xy!=undefined)
+    {
+        detail.style.left = xy.x+"px";
+        detail.style.top = xy.y+"px";
+    }
+
+    detail.querySelectorAll("input[type=text],input[type=number],textarea").forEach(obj=>{
+        obj.addEventListener("focus",function(e){
+            detail.draggable = false;
+        });
+        obj.addEventListener("blur",function(e){
+            detail.draggable = true;
+        });
+    });
+
+    
+    detail.style.display = "block";
+    System.MainDiv.appendChild(detail);
+}
 
 //true手機行動裝置 false非手機
 function CheckMobile()
