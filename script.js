@@ -223,13 +223,7 @@ function Member()
         btn.addEventListener("click",Login);
     }
 
-
-
-    
-
     btn.value = login_word;
-
-    
 
     menu = {
         "btn":{
@@ -276,13 +270,14 @@ function Member()
             return;
         });
     }
+
     function LogOut()
     {
         gapi.auth2.getAuthInstance().signOut();
         
         var msg = document.createElement("div");
         msg.innerHTML = "已登出網站";
-        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert"}) );
+        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
         return;
     }
 }
