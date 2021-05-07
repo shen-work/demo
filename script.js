@@ -200,13 +200,23 @@ function Member()
     var btn = document.createElement("input");
     btn.type = "button";
     btn.value = "GOOGLE登入/註冊";
+    btn.addEventListener("click",function(){
+
+        gapi.auth2.getAuthInstance().signIn().then(function(r){
+
+            console.log(r);
+
+
+        },function(err){
+            alert("登入/註冊失敗");
+            return;
+        });
+    
+    });
 
     menu = {
         "btn":{
             "html":btn
-        },
-        "btn2":{
-            "html":btn2
         }
     }
 
