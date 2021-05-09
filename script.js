@@ -8,7 +8,9 @@ var System = {
     "member":{},
     "time":null,
     "_timer_list":{},
-    "client_id":"506821759724-fq3jm7jq7llvnp7tqui2493kupkknvvp.apps.googleusercontent.com"
+    "client_id":"506821759724-fq3jm7jq7llvnp7tqui2493kupkknvvp.apps.googleusercontent.com",
+    //"GAKey":"AIzaSyCEe6fZN3JCszefiJ8qLTpCn-HlCNTGjNo",
+    "GAKey":"AIzaSyCUXIWD966J5JDtytCel0O5JXwMIz7GVr0"
 };
 
 
@@ -83,6 +85,7 @@ function MenuLi()
     var list = {
         "Test":{"name":"測試系統"},
         "Member":{"name":"帳號管理"},
+        "YT":{"name":"YouTube內嵌播放"},
     }
     for(var key in list)
     {
@@ -229,10 +232,12 @@ function Member()
         menu = {
             "email":{
                 "span":"GOOGLE帳號",
+                "disabled":"disabled",
                 "value":g.getEmail()
             },
             "name":{
-                "span":"姓名",
+                "span":"GOOGLE暱稱",
+                "disabled":"disabled",
                 "value":g.getName()
             }
         };
@@ -300,6 +305,231 @@ function Member()
         return;
     }
 }
+
+var player = {};
+function YT()
+{
+    var menu = {};
+    
+
+
+    var btn = document.createElement("input");
+    btn.type = "button";
+
+    var div = document.createElement("div");
+    div.id = "YT";
+
+    var btn = document.createElement("input");
+    btn.type = "button";
+    btn.value = "內嵌播放開始";
+    btn.addEventListener("click",function(){
+        
+        GetYtInfo(YTGetV( document.querySelector("#url").value ),function(info){
+
+            if( info.items.length>0 )
+            {
+                if(info.items[0].status.embeddable==false)
+                {
+
+                    var msg = document.createElement("div");
+                    msg.innerHTML = `
+                    影片擁有者不允許在其他網站上播放這部影片。點擊下方連結另開新分頁前往該影片網址<BR>
+                    <a href="`+document.querySelector("#url").value+`" target="_blank">`+document.querySelector("#url").value+`</a>`;
+                    
+                    System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+
+                    return;
+                }
+
+                YTApi(info);
+            }
+            else
+            {
+
+                var msg = document.createElement("div");
+                msg.innerHTML = "無此youtube影片，請確認網址是否正確";
+                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
+            }
+
+        });    
+    });
+
+    menu = {
+        "url":{
+            "span":"網址",
+            "value":"請輸入Youtube網址",
+            "type":"text",
+            "event":{"focus":function(){
+                if(this.value=="請輸入Youtube網址")
+                this.value = "";
+            }}
+        },
+        "video":{
+            "html":div
+        },
+        "btn":{
+            "html":btn
+        }
+    };
+
+    System.MainDiv.appendChild( RowMake(menu) );
+    MainDivSetTimeout();
+
+
+    function YTApi(info)
+    {
+        if( Object.keys(player).length!=0 )
+        {
+
+            GetYtInfo(YTGetV( document.querySelector("#url").value ),function(info){
+
+                if( info.items.length>0 )
+                {
+                    if(info.items[0].status.embeddable==false)
+                    {
+    
+                        var msg = document.createElement("div");
+                        msg.innerHTML = `
+                        影片擁有者不允許在其他網站上播放這部影片。點擊下方連結另開新分頁前往該影片網址<BR>
+                        <a href="`+document.querySelector("#url").value+`" target="_blank">`+document.querySelector("#url").value+`</a>`;
+                        
+                        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+    
+                        return;
+                    }
+    
+                    player.loadVideoById( YTGetV( document.querySelector("#url").value ) );
+
+                    document.querySelector("#channelTitle").innerHTML = "頻道名稱："+info.items["0"].snippet.channelTitle;
+                    
+                    document.querySelector("#title").innerHTML = "影片標題："+info.items["0"].snippet.title;
+
+                    document.querySelector("#publishedAt").innerHTML = "直播開始(上傳)時間："+DateFormat(new Date(info.items["0"].snippet.publishedAt),false);
+
+                }
+                else
+                {
+    
+                    var msg = document.createElement("div");
+                    msg.innerHTML = "無此youtube影片，請確認網址是否正確";
+                    System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+                }
+    
+            }); 
+            return;
+        }
+
+        var config = System.session.YTconfig||{};
+
+        config.videoId = YTGetV( document.querySelector("#url").value );
+
+        config.playerVars = {
+            //"controls":1
+        };
+    
+        config.events = {
+            "onStateChange":function(e){
+
+                
+    
+                player._CurrentTime();
+    
+                document.querySelector("#Volume").value = player.getVolume();
+                document.querySelector("#VolumeSpan").innerHTML = "音量："+player.getVolume();
+                
+    
+                document.querySelector("#CurrentTimeSeek").value = 
+                Math.floor( player.getCurrentTime() / player.getDuration() * 100 );
+                
+            }
+        };
+
+
+
+        player = new YT.Player("video",config);
+
+        player._CurrentTime = function(){
+
+            clearInterval(player._CurrentTimer);
+            player._CurrentTimer = setInterval(function(){
+                
+                if(document.querySelector("#CurrentTime")==null)
+                {
+                    clearInterval(player._CurrentTimer);
+                    return
+                }
+                document.querySelector("#CurrentTime").innerHTML = 
+                "播放時間："+TimeFormat(player.getCurrentTime());
+                
+            },100);
+        
+        }
+        var tmp = document.createDocumentFragment();
+
+        tmp.appendChild( SpanCr("頻道名稱："+info.items["0"].snippet.channelTitle,{"id":"channelTitle"}) );
+        tmp.appendChild( document.createElement("br") );
+        tmp.appendChild( SpanCr("影片標題："+info.items["0"].snippet.title,{"id":"title"}) );
+        tmp.appendChild( document.createElement("br") );
+        tmp.appendChild( SpanCr("直播開始(上傳)時間："+DateFormat(new Date(info.items["0"].snippet.publishedAt),false),{"id":"publishedAt"}) );
+        tmp.appendChild( document.createElement("br") );
+
+
+        tmp.appendChild( SpanCr("播放時間：0:0:0",{"id":"CurrentTime"}) );
+        tmp.appendChild( document.createElement("br") );
+        tmp.appendChild( TextCr("range",{"id":"CurrentTimeSeek","max":100,"min":0},{"change":function(){  
+            
+            player.seekTo( 
+                Math.floor( (this.value / 100) * player.getDuration() )
+            );
+    
+        }}) );
+        tmp.appendChild( document.createElement("br") );
+
+        tmp.appendChild( SpanCr("音量：0",{"id":"VolumeSpan"}) );
+        tmp.appendChild( document.createElement("br") );
+        tmp.appendChild( TextCr("range",{"id":"Volume","max":100,"min":0},{"change":function(){ 
+            player.setVolume(this.value);
+            document.querySelector("#VolumeSpan").innerHTML = "音量：" + this.value;
+    
+        }}) );
+        tmp.appendChild( document.createElement("br") );
+
+
+
+        tmp.appendChild( TextCr("button",{"value":"播放"},{"click":function(){
+            player.playVideo();
+        }}) );
+    
+        tmp.appendChild( TextCr("button",{"value":"暫停"},{"click":function(){
+            player.pauseVideo();
+        }}) );
+
+
+
+        System.MainDiv.appendChild( OpenWindow(tmp,{"id":"YTControl","close_draggable":true}) );
+        MainDivSetTimeout();
+    }
+
+    function YTGetV(url)
+    {
+        if(url.indexOf("embed")!=-1 || url.indexOf("youtu.be")!=-1)
+        {
+            url = url||url.split("?")[1];
+            console.log(url);
+            return url.split("/")[ url.split("/").length-1 ];
+        }
+    
+        url = "?"+url.split("?")[1]||url;
+        url = new URLSearchParams(url);
+        return url.get("v");
+    }
+
+
+
+    
+
+}
+
 
 
 function MainDivSetTimeout()
@@ -694,6 +924,8 @@ function OpenWindow(content,config = {})
         detail = document.createElement("div");
         detail.className = "detail";
         detail.id = id;
+        
+        if(config.close_draggable===undefined)
         detail.setAttribute("draggable","true");
     }
     else
@@ -769,6 +1001,115 @@ function DivMainClientHeight(_id)
     document.querySelector("div#"+System.now_page).style.height = document.querySelector("div#"+System.now_page+" div#Main").clientHeight + "px";
         
 }
+
+
+function TimeFormat(sec)
+{
+    if( isNaN(parseInt(sec)) ) sec = 0;
+
+    sec = parseInt(sec);
+
+    var set_time = [
+        Math.floor(sec/3600),
+        Math.floor(sec%3600/60),
+        sec%60
+    ];
+
+    return set_time.join(":");
+}
+
+function SpanCr(str,attr)
+{
+    var obj = document.createElement("span");
+    obj.innerHTML = str;
+
+    for(var k in attr)
+    {
+        obj.setAttribute(k,attr[k]);
+    }
+
+    return obj;
+}
+
+function TextCr(type,attr,event)
+{
+    var obj;
+    
+    if(type=="textarea")
+    obj = document.createElement("textarea");
+    else
+    obj = document.createElement("input");
+    
+    obj.type = type;
+
+    for(var k in attr)
+    {
+        if(type=="textarea" && k=="value")
+        obj.innerHTML = attr[k];
+        else
+        obj.setAttribute(k,attr[k]);
+    }
+
+
+    for(var type in event)
+        obj.addEventListener(type,event[type]);
+
+
+    return obj;
+}
+
+
+function GetYtInfo(VideoId,_func)
+{
+    var url = "https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id="+VideoId+"&key="+System.GAKey;
+
+    var xml;
+    xml = new XMLHttpRequest();
+    xml.open("GET",url);
+    xml.setRequestHeader("Content-type","application/x-www-form-urlencoded;");
+
+    xml.onreadystatechange = function()
+    {
+        if(xml.readyState==4)
+        {
+            if(xml.response!="")
+            {
+                System.XmlData = JSON.parse(xml.response);
+                
+                _func(System.XmlData);
+            }
+        }
+    }
+    xml.send();
+}
+
+
+
+function GetYtCommentThreads(VideoId,_func)
+{
+    var url = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&order=relevance&maxResults=10&videoId="+VideoId+"&key="+System.GAKey;
+
+    var xml;
+    xml = new XMLHttpRequest();
+    xml.open("GET",url);
+    xml.setRequestHeader("Content-type","application/x-www-form-urlencoded;");
+
+    xml.onreadystatechange = function()
+    {
+        if(xml.readyState==4)
+        {
+            if(xml.response!="")
+            {
+                System.XmlData = JSON.parse(xml.response);
+                
+                _func(System.XmlData);
+            }
+        }
+    }
+    xml.send();
+}
+
+
 
 
 /*
