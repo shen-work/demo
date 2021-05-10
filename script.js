@@ -86,6 +86,7 @@ function MenuLi()
         "Test":{"name":"測試系統"},
         "Member":{"name":"帳號管理"},
         "YT":{"name":"YouTube內嵌播放"},
+        "Chat":{"name":"聊天室功能"}
     }
     for(var key in list)
     {
@@ -429,8 +430,6 @@ function YT()
     
         config.events = {
             "onStateChange":function(e){
-
-                
     
                 player._CurrentTime();
     
@@ -504,6 +503,46 @@ function YT()
             player.pauseVideo();
         }}) );
 
+        tmp.appendChild( TextCr("button",{"value":"顯示前10則留言"},{"click":function(e){
+            GetYtCommentThreads( player.getVideoData().video_id ,function(r){
+                
+                if(r.error!==undefined)
+                {
+                    var msg = document.createElement("div");
+                    msg.innerHTML = "無留言訊息或直播尚未結束";
+                    System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+
+                    return;
+                }
+
+                console.log(r.items);
+                
+                var table = document.createElement("table");
+                table.className = "ListTable SongRowTable";
+                
+                for(var k in r.items)
+                {
+                    var _data = r.items[k].snippet.topLevelComment.snippet;
+        
+                    var tr = document.createElement("tr");
+                    var td = document.createElement("td");
+                    td.innerHTML =  "<span style='color:#f00;'>"+_data.authorDisplayName + "：</span><BR>" +  _data.textDisplay + "<hr>" + DateFormat(new Date(_data.publishedAt),false);;
+        
+                    tr.appendChild(td);
+        
+                    table.appendChild(tr);
+                    
+                }
+
+                System.MainDiv.appendChild( OpenWindow(table,{"id":"YtCommentThreads","close":true,"xy":{
+                    "x":e.clientX,
+                    "y":e.clientY
+                }}) );
+            });
+
+
+        }}) );
+
 
 
         System.MainDiv.appendChild( OpenWindow(tmp,{"id":"YTControl","close_draggable":true}) );
@@ -523,11 +562,49 @@ function YT()
         url = new URLSearchParams(url);
         return url.get("v");
     }
+}
 
 
+function Chat()
+{
+    var menu = {};
 
-    
 
+    menu = {
+        "ChatText":{
+            "html":TextCr("textarea",{"class":"ChatText"})
+        },
+        "SendText":{
+            "html":TextCr("textarea",{"value":""})
+        },
+        "SendBtn":{
+            "html":TextCr("button",{"value":"發言"},{"click":function(){
+
+                if( gapi.auth2.getAuthInstance().isSignedIn.get()!==true )
+                {
+                    alert("請先登入帳號才可進行發言");
+                    return;
+                }
+
+                var g = gapi.auth2.getAuthInstance().currentUser.get().gt;
+
+                var word = document.querySelector("#SendText").value;
+
+                var _data = {};
+
+                _data.word = word;
+                _data.time = System.ServerTime;
+                _data.member_id = g.GS;
+                _data.name = g.getName();
+
+                DB.ref("chat").push( _data );
+
+            }})
+        }
+    }
+
+    System.MainDiv.appendChild( RowMake(menu) );
+    MainDivSetTimeout();
 }
 
 
@@ -1087,7 +1164,7 @@ function GetYtInfo(VideoId,_func)
 
 function GetYtCommentThreads(VideoId,_func)
 {
-    var url = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&order=relevance&maxResults=10&videoId="+VideoId+"&key="+System.GAKey;
+    var url = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=10&videoId="+VideoId+"&key="+System.GAKey;//&order=relevance
 
     var xml;
     xml = new XMLHttpRequest();
