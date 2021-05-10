@@ -54,6 +54,11 @@ textarea:focus{
     background: #fff;
 }
 
+textarea.ChatText{
+    width: 100%;
+    height: 500px;
+}
+
 
 
 select{
