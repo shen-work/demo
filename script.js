@@ -33,7 +33,8 @@ window.onload = function()
 
             DB = DB.database();
 
-            setTimeout(Main,1);
+            console.log(System.gapi._loginstatus);
+            setTimeout(Main,1);            
         });
     }
     else
