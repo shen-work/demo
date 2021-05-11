@@ -27,8 +27,8 @@ window.onload = function()
             
             System.gapi = gapi.auth2.getAuthInstance();
             System.gapi._loginstatus = System.gapi.isSignedIn.get();
-            System.gapi._login = System.gapi.signIn();
-            System.gapi._logout = System.gapi.signOut();
+            System.gapi._login = System.gapi.signIn;
+            System.gapi._logout = System.gapi.signOut;
             System.gapi._user = System.gapi.currentUser.get().gt;
 
             DB = DB.database();
@@ -247,7 +247,7 @@ function Member()
     var btn = document.createElement("input");
     btn.type = "button";
 
-    if(System.gapi._login==true)
+    if(System.gapi._loginstatus==true)
     {
         menu = {
             "email":{
@@ -282,7 +282,7 @@ function Member()
 
     function Login()
     {
-        System.gapi._login.then(function(r){
+        System.gapi._login().then(function(r){
             
             if(r=="localhost false")
             {
@@ -323,7 +323,7 @@ function Member()
 
     function LogOut()
     {
-        System.gapi._logout;
+        System.gapi._logout();
         
         var msg = document.createElement("div");
         msg.innerHTML = "已登出網站";
