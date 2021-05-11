@@ -18,25 +18,31 @@ var System = {
 
 window.onload = function()
 {
-
     if(location.href.indexOf("file")!=0)
     {
         gapi.load("auth2",function(){
 
             gapi.auth2.init({"client_id":System.client_id});
             
-            console.log(gapi.auth2.getAuthInstance().isSignedIn.get());
-
+            /*
             System.gapi = gapi.auth2.getAuthInstance();
             System.gapi._loginstatus = System.gapi.isSignedIn.get();
             System.gapi._login = System.gapi.signIn;
             System.gapi._logout = System.gapi.signOut;
             System.gapi._user = System.gapi.currentUser.get().gt;
+            */
 
             DB = DB.database();
 
-            console.log(System.gapi._loginstatus);
-            setTimeout(Main,1);            
+            setTimeout(Main,1);
+
+            setTimeout(function(){
+                System.gapi = gapi.auth2.getAuthInstance();
+                System.gapi._loginstatus = System.gapi.isSignedIn.get();
+                System.gapi._login = System.gapi.signIn;
+                System.gapi._logout = System.gapi.signOut;
+                System.gapi._user = System.gapi.currentUser.get().gt;
+            },1000);
         });
     }
     else
@@ -98,14 +104,6 @@ function Main()
     System.session = JSON.parse(sessionStorage.shen||'{}');
 
     ServerTime(MenuLi);
-
-
-
-
-    console.log(gapi.auth2.getAuthInstance().isSignedIn.get());
-
-
-    console.log(System.gapi._loginstatus);
 }
 
 function MenuLi()
