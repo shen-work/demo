@@ -98,6 +98,14 @@ function Main()
     System.session = JSON.parse(sessionStorage.shen||'{}');
 
     ServerTime(MenuLi);
+
+
+
+
+    console.log(gapi.auth2.getAuthInstance().isSignedIn.get());
+
+
+    console.log(System.gapi._loginstatus);
 }
 
 function MenuLi()
