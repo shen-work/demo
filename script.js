@@ -21,10 +21,20 @@ window.onload = function()
 
     var _then = new Promise( (r)=>r("localhost false") );
     System.gapi = {};
+    /*
     System.gapi._loginstatus = false;
     System.gapi._login = _then;
     System.gapi._logout = function(){alert("localhost false");}
     System.gapi._user = {};
+
+
+
+    System.gapi = gapi.auth2.getAuthInstance();
+    System.gapi._loginstatus = System.gapi.isSignedIn.get();
+    System.gapi._login = System.gapi.signIn;
+    System.gapi._logout = System.gapi.signOut;
+    System.gapi._user = System.gapi.currentUser.get().gt;
+    */
 
     DB = DB.database();
 
@@ -34,21 +44,7 @@ window.onload = function()
 
             gapi.auth2.init({"client_id":System.client_id});
             
-            /*
             System.gapi = gapi.auth2.getAuthInstance();
-            System.gapi._loginstatus = System.gapi.isSignedIn.get();
-            System.gapi._login = System.gapi.signIn;
-            System.gapi._logout = System.gapi.signOut;
-            System.gapi._user = System.gapi.currentUser.get().gt;
-            */
-
-            setTimeout(function(){
-                System.gapi = gapi.auth2.getAuthInstance();
-                System.gapi._loginstatus = System.gapi.isSignedIn.get();
-                System.gapi._login = System.gapi.signIn;
-                System.gapi._logout = System.gapi.signOut;
-                System.gapi._user = System.gapi.currentUser.get().gt;
-            },1000);
         });
     }
     Main();
@@ -249,18 +245,19 @@ function Member()
     var btn = document.createElement("input");
     btn.type = "button";
 
-    if(System.gapi._loginstatus==true)
+    if(System.gapi.isSignedIn.get()==true)
     {
+        var gt = System.gapi.currentUser.get().gt;
         menu = {
             "email":{
                 "span":"GOOGLE帳號",
                 "disabled":"disabled",
-                "value":System.gapi._user.getEmail()
+                "value":gt.getEmail()
             },
             "name":{
                 "span":"GOOGLE暱稱",
                 "disabled":"disabled",
-                "value":System.gapi._user.getName()
+                "value":gt.getName()
             }
         };
         login_word = "登出網站";
@@ -284,7 +281,7 @@ function Member()
 
     function Login()
     {
-        System.gapi._login().then(function(r){
+        System.gapi.signIn().then(function(r){
             
             if(r==="localhost false")
             {
@@ -307,11 +304,7 @@ function Member()
 
             });
 
-            System.gapi = gapi.auth2.getAuthInstance();
-            System.gapi._loginstatus = System.gapi.isSignedIn.get();
-            System.gapi._login = System.gapi.signIn;
-            System.gapi._logout = System.gapi.signOut;
-            System.gapi._user = System.gapi.currentUser.get().gt;
+            
 
             
             var msg = document.createElement("div");
@@ -332,14 +325,7 @@ function Member()
 
     function LogOut()
     {
-        System.gapi._logout();
-
-        System.gapi = gapi.auth2.getAuthInstance();
-        System.gapi._loginstatus = System.gapi.isSignedIn.get();
-        System.gapi._login = System.gapi.signIn;
-        System.gapi._logout = System.gapi.signOut;
-        System.gapi._user = System.gapi.currentUser.get().gt;
-
+        System.gapi.signOut();
         
         var msg = document.createElement("div");
         msg.innerHTML = "已登出網站";
