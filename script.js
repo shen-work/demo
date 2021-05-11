@@ -25,6 +25,8 @@ window.onload = function()
 
             gapi.auth2.init({"client_id":System.client_id});
             
+            console.log(gapi.auth2.getAuthInstance().isSignedIn.get());
+
             System.gapi = gapi.auth2.getAuthInstance();
             System.gapi._loginstatus = System.gapi.isSignedIn.get();
             System.gapi._login = System.gapi.signIn;
