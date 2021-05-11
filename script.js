@@ -18,18 +18,38 @@ var System = {
 
 window.onload = function()
 {
-    gapi.load("auth2",function(){
 
-        if(location.href.indexOf("file")!=0)
+    if(location.href.indexOf("file")!=0)
+    {
+        gapi.load("auth2",function(){
+
             gapi.auth2.init({"client_id":System.client_id});
-        
+            
+            System.gapi = gapi.auth2.getAuthInstance();
+            System.gapi._loginstatus = System.gapi.isSignedIn.get();
+            System.gapi._login = System.gapi.signIn();
+            System.gapi._logout = System.gapi.signOut();
+            System.gapi._user = System.gapi.currentUser.get().gt;
+
+            DB = DB.database();
+
+            setTimeout(Main,1);
+        });
+    }
+    else
+    {
+        var _then = new Promise( (r)=>r("localhost false") );
+        System.gapi = {};
+        System.gapi._loginstatus = false;
+        System.gapi._login = _then;
+        System.gapi._logout = function(){alert("localhost false");}
+        System.gapi._user = {};
+
+
         DB = DB.database();
 
-        setTimeout(function(){
-            Main();
-        },1);
-
-    });
+        setTimeout(Main,1);
+    }
 
 
     document.body.addEventListener("touchmove",function(e){
@@ -227,19 +247,18 @@ function Member()
     var btn = document.createElement("input");
     btn.type = "button";
 
-    if(gapi.auth2.getAuthInstance().isSignedIn.get()==true)
+    if(System.gapi._login==true)
     {
-        var g = gapi.auth2.getAuthInstance().currentUser.get().gt;
         menu = {
             "email":{
                 "span":"GOOGLE帳號",
                 "disabled":"disabled",
-                "value":g.getEmail()
+                "value":System.gapi._user.getEmail()
             },
             "name":{
                 "span":"GOOGLE暱稱",
                 "disabled":"disabled",
-                "value":g.getName()
+                "value":System.gapi._user.getName()
             }
         };
         login_word = "登出網站";
@@ -263,7 +282,13 @@ function Member()
 
     function Login()
     {
-        gapi.auth2.getAuthInstance().signIn().then(function(r){
+        System.gapi._login.then(function(r){
+            
+            if(r=="localhost false")
+            {
+                alert("localhost false");
+                return;
+            }
 
             DB.ref("member/"+r.Aa).once("value",function(member){
 
@@ -298,7 +323,7 @@ function Member()
 
     function LogOut()
     {
-        gapi.auth2.getAuthInstance().signOut();
+        System.gapi._logout;
         
         var msg = document.createElement("div");
         msg.innerHTML = "已登出網站";
@@ -307,18 +332,18 @@ function Member()
     }
 }
 
-var player = {};
+
 function YT()
 {
     var menu = {};
-    
+    var player = {};    
 
 
     var btn = document.createElement("input");
     btn.type = "button";
 
-    var div = document.createElement("div");
-    div.id = "YT";
+    var YTdiv = document.createElement("div");
+    YTdiv.id = "YT";
 
     var btn = document.createElement("input");
     btn.type = "button";
@@ -366,7 +391,7 @@ function YT()
             }}
         },
         "video":{
-            "html":div
+            "html":YTdiv
         },
         "btn":{
             "html":btn
@@ -423,6 +448,7 @@ function YT()
         var config = System.session.YTconfig||{};
 
         config.videoId = YTGetV( document.querySelector("#url").value );
+        config.width = (YTdiv.parentElement.clientWidth>640)?640:YTdiv.parentElement.clientWidth;
 
         config.playerVars = {
             //"controls":1
@@ -460,6 +486,13 @@ function YT()
                 document.querySelector("#CurrentTime").innerHTML = 
                 "播放時間："+TimeFormat(player.getCurrentTime());
                 
+                document.querySelector("#CurrentTimeSeek").value = 
+                Math.floor( player.getCurrentTime() / player.getDuration() * 100 );
+
+                document.querySelector("#Volume").value = player.getVolume();
+                document.querySelector("#VolumeSpan").innerHTML = "音量："+player.getVolume();
+
+
             },100);
         
         }
@@ -480,7 +513,11 @@ function YT()
             player.seekTo( 
                 Math.floor( (this.value / 100) * player.getDuration() )
             );
+            player._CurrentTime();
     
+        },
+        "mousedown":function(){
+            clearInterval(player._CurrentTimer);
         }}) );
         tmp.appendChild( document.createElement("br") );
 
@@ -489,8 +526,12 @@ function YT()
         tmp.appendChild( TextCr("range",{"id":"Volume","max":100,"min":0},{"change":function(){ 
             player.setVolume(this.value);
             document.querySelector("#VolumeSpan").innerHTML = "音量：" + this.value;
-    
+            player._CurrentTime();
+        },
+        "mousedown":function(){
+            clearInterval(player._CurrentTimer);
         }}) );
+
         tmp.appendChild( document.createElement("br") );
 
 
@@ -515,7 +556,7 @@ function YT()
                     return;
                 }
 
-                console.log(r.items);
+
                 
                 var table = document.createElement("table");
                 table.className = "ListTable SongRowTable";
@@ -569,10 +610,13 @@ function Chat()
 {
     var menu = {};
 
+    var chat_textarea = document.createElement("div");
+    //TextCr("textarea",{"class":"ChatText"});
+    chat_textarea.className = "ChatText";
 
     menu = {
         "ChatText":{
-            "html":TextCr("textarea",{"class":"ChatText"})
+            "html":chat_textarea
         },
         "SendText":{
             "html":TextCr("textarea",{"value":""})
@@ -580,13 +624,15 @@ function Chat()
         "SendBtn":{
             "html":TextCr("button",{"value":"發言"},{"click":function(){
 
-                if( gapi.auth2.getAuthInstance().isSignedIn.get()!==true )
+                if( System.gapi._loginstatus!==true )
                 {
-                    alert("請先登入帳號才可進行發言");
+                    var msg = document.createElement("div");
+                    msg.innerHTML = `請先登入帳號才可進行發言`;
+                    
+                    System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
                     return;
                 }
 
-                var g = gapi.auth2.getAuthInstance().currentUser.get().gt;
 
                 var word = document.querySelector("#SendText").value;
 
@@ -594,16 +640,60 @@ function Chat()
 
                 _data.word = word;
                 _data.time = System.ServerTime;
-                _data.member_id = g.GS;
-                _data.name = g.getName();
+                _data.member_id = System.gapi._user.GS;
+                _data.name = System.gapi._user.getName();
 
                 DB.ref("chat").push( _data );
 
             }})
         }
     }
-
     System.MainDiv.appendChild( RowMake(menu) );
+
+    var join_chat_time = 0;
+
+    DB.ref("chat").orderByChild("time").startAt(join_chat_time).on("value",r=>{
+        join_chat_time = System.time-5000;
+
+        var r = r.val();
+        var list = [];
+
+        for(var k in r)
+        {
+            var list_idx = list.length;
+            var _data = r[k];
+            _data.time_f = DateFormat(new Date(_data.time),false );
+            _data.id = k;
+
+            list[ list_idx ] = _data;
+        }
+        
+        for(var k in list)
+        {
+            var _data = list[k];
+
+            if( chat_textarea.querySelector("#"+_data.id)===null )
+                chat_textarea.innerHTML += ContentFormat(_data);
+        }
+
+        chat_textarea.scrollTo(0,chat_textarea.scrollHeight);
+    });
+
+    function ContentFormat(_data)
+    {
+        var _r = "";
+
+        _r += 
+        `<div id="`+_data.id+`">
+        發言姓名：<span style=color:#f00>`+_data.name+`</span><br>
+        發言時間：<span style=color:#f00>`+_data.time_f+`</span><br>
+        發言內容：<br>`+_data.word.replaceAll("\n","<br>")+`
+        <hr></div>`;
+
+        return _r;
+    }
+
+
     MainDivSetTimeout();
 }
 
@@ -850,64 +940,6 @@ function RowMake(menu = {})
 }
 
 
-function DelAccount(gapi_getid)
-{
-    DB.ref("member/"+gapi_getid).once("value",m=>{
-        m = m.val();
-
-        gapi.auth2.getAuthInstance().signOut();
-        gapi.auth2.getAuthInstance().disconnect();
-        DB.ref("member/"+gapi_getid).remove();
-        
-    
-        var _tmp = {"member":{}};
-        localStorage.shen = JSON.stringify(_tmp);
-    
-        if(m==null)
-        {   
-            alert("該GOOGLE帳號無綁定會員");
-        }
-
-        location.reload();
-
-    });
-}
-
-
-
-function RegisterMember(gapi_getid)
-{
-    DB.ref("member/"+gapi_getid).once("value",function(m){
-        m = m.val();
-
-        if(m==null)
-        {
-            m = {};
-            m.account = gapi_getid;
-            m.name = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile().sd;
-            m.time = System.ServerTime;
-            DB.ref("/member/"+gapi_getid).set(m);
-
-            m.time = System.time;
-            System.member = m;
-            
-            var _tmp = {"member":System.member};
-            localStorage.shen = JSON.stringify(_tmp);
-            
-
-            location.reload();
-        }
-        else
-        {
-            System.member = m;
-
-            var _tmp = {"member":System.member};
-            localStorage.shen = JSON.stringify(_tmp);
-
-            location.reload();
-        }
-    });        
-}
 
 
 function ServerTime(func)
