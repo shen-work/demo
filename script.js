@@ -18,6 +18,16 @@ var System = {
 
 window.onload = function()
 {
+
+    var _then = new Promise( (r)=>r("localhost false") );
+    System.gapi = {};
+    System.gapi._loginstatus = false;
+    System.gapi._login = _then;
+    System.gapi._logout = function(){alert("localhost false");}
+    System.gapi._user = {};
+
+    DB = DB.database();
+
     if(location.href.indexOf("file")!=0)
     {
         gapi.load("auth2",function(){
@@ -32,10 +42,6 @@ window.onload = function()
             System.gapi._user = System.gapi.currentUser.get().gt;
             */
 
-            DB = DB.database();
-
-            setTimeout(Main,1);
-
             setTimeout(function(){
                 System.gapi = gapi.auth2.getAuthInstance();
                 System.gapi._loginstatus = System.gapi.isSignedIn.get();
@@ -45,21 +51,8 @@ window.onload = function()
             },1000);
         });
     }
-    else
-    {
-        var _then = new Promise( (r)=>r("localhost false") );
-        System.gapi = {};
-        System.gapi._loginstatus = false;
-        System.gapi._login = _then;
-        System.gapi._logout = function(){alert("localhost false");}
-        System.gapi._user = {};
-
-
-        DB = DB.database();
-
-        setTimeout(Main,1);
-    }
-
+    Main();
+    
 
     document.body.addEventListener("touchmove",function(e){
 
