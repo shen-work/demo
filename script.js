@@ -286,7 +286,7 @@ function Member()
     {
         System.gapi._login().then(function(r){
             
-            if(r=="localhost false")
+            if(r==="localhost false")
             {
                 alert("localhost false");
                 return;
@@ -306,6 +306,13 @@ function Member()
                 }
 
             });
+
+            System.gapi = gapi.auth2.getAuthInstance();
+            System.gapi._loginstatus = System.gapi.isSignedIn.get();
+            System.gapi._login = System.gapi.signIn;
+            System.gapi._logout = System.gapi.signOut;
+            System.gapi._user = System.gapi.currentUser.get().gt;
+
             
             var msg = document.createElement("div");
             msg.innerHTML = "登入/註冊成功";
@@ -326,6 +333,13 @@ function Member()
     function LogOut()
     {
         System.gapi._logout();
+
+        System.gapi = gapi.auth2.getAuthInstance();
+        System.gapi._loginstatus = System.gapi.isSignedIn.get();
+        System.gapi._login = System.gapi.signIn;
+        System.gapi._logout = System.gapi.signOut;
+        System.gapi._user = System.gapi.currentUser.get().gt;
+
         
         var msg = document.createElement("div");
         msg.innerHTML = "已登出網站";
