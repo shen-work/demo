@@ -776,6 +776,14 @@ function Stock()
 
                         for(var i=0;input<input.length;i++)
                         {
+                            if(input[i].value=="")
+                            {
+                                var msg = document.createElement("div");
+                                msg.innerHTML = "欄位不可空白";
+                                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+                                return;
+                            }
+
                             if(input[i].id=="on")
                             {
                                 if( input[i].checked==true )
@@ -787,8 +795,11 @@ function Stock()
                             }
                         }
 
+                        
+
                         _data.time = System.ServerTime;
 
+                        console.log(_data);
                         DB.ref("member/"+System.gapi.currentUser.get().Aa+"/product").push(_data);
 
                         var msg = document.createElement("div");
