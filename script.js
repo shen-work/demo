@@ -1,3 +1,9 @@
+/*
+購物車
+庫存管理
+定單管理
+*/
+
 var DB = firebase;
 DB.initializeApp({databaseURL: "https://shen-member-default-rtdb.firebaseio.com/"});
 
@@ -8,6 +14,12 @@ var System = {
     "member":{},
     "time":null,
     "_timer_list":{},
+    "product":{
+        "name":"商品名稱",
+        "count":"數量",
+        "price":"價錢",
+        "on":"上/下架"
+    },
     "client_id":"506821759724-fq3jm7jq7llvnp7tqui2493kupkknvvp.apps.googleusercontent.com",
     //"GAKey":"AIzaSyCEe6fZN3JCszefiJ8qLTpCn-HlCNTGjNo",
     "GAKey":"AIzaSyCUXIWD966J5JDtytCel0O5JXwMIz7GVr0"
@@ -19,9 +31,10 @@ var System = {
 window.onload = function()
 {
 
-    var _then = new Promise( (r)=>r("localhost false") );
+    
     System.gapi = {};
     /*
+    var _then = new Promise( (r)=>r("localhost false") );
     System.gapi._loginstatus = false;
     System.gapi._login = _then;
     System.gapi._logout = function(){alert("localhost false");}
@@ -104,7 +117,10 @@ function MenuLi()
         "Test":{"name":"測試系統"},
         "Member":{"name":"帳號管理"},
         "YT":{"name":"YouTube內嵌播放"},
-        "Chat":{"name":"聊天室功能"}
+        "Chat":{"name":"聊天室功能"},
+        "Shop":{"name":"購物車功能"},
+        "Stock":{"name":"庫存管理"},
+        "Order":{"name":"定單管理"},
     }
     for(var key in list)
     {
@@ -574,7 +590,6 @@ function YT()
                     tr.appendChild(td);
         
                     table.appendChild(tr);
-                    
                 }
 
                 System.MainDiv.appendChild( OpenWindow(table,{"id":"YtCommentThreads","close":true,"xy":{
@@ -700,6 +715,106 @@ function Chat()
 }
 
 
+function Shop()
+{
+    System.MainDiv.appendChild( RowMake({}) );
+    MainDivSetTimeout();
+}
+
+function Stock()
+{
+    var menu = {
+        "new_product_btn":{
+            "html":TextCr("button",{"value":"新增商品"},{"click":function(e){
+
+                
+                var tmp = document.createDocumentFragment();
+
+                var table = document.createElement("table");
+                table.className = "ListTable";
+
+                for(var k in System.product)
+                {        
+                    var tr = document.createElement("tr");
+
+                    var td = document.createElement("td");
+                    td.innerHTML = System.product[k];
+                    tr.appendChild(td);
+
+                    td = document.createElement("td");
+                    var obj = TextCr("text",{"id":k});
+                    if(k=="on") 
+                    {
+                        obj = document.createDocumentFragment();
+                        obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"on"}) );
+                        obj.appendChild( SpanCr("上架") );
+                        obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"off","checked":true}) );
+                        obj.appendChild( SpanCr("下架") );
+                    }
+                    td.appendChild( obj );
+                    
+                    tr.appendChild(td);
+        
+                    table.appendChild(tr);
+                }
+                
+
+                tmp.appendChild(table);
+
+
+                tmp.appendChild( 
+                    TextCr("button",{"value":"送出"},{"click":function(){
+
+                        var input = table.querySelectorAll("input:not([type=button])");
+
+                        var _data = {};
+
+                        for(var k in input)
+                        {
+                            if(input[k].id=="on")
+                            {
+                                if( input[k].checked==true )
+                                _data[ input[k].id ] = input[k].value;
+                            }
+                            else
+                            {
+                                _data[ input[k].id ] = input[k].value;
+                            }
+                        }
+
+                        _data.time = System.ServerTime;
+                        
+                        DB.ref("member/"+System.gapi.currentUser.get().Aa+"/product").push(_data);
+
+                        var msg = document.createElement("div");
+                        msg.innerHTML = "新增完成";
+                        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
+                        return;
+                    }}) 
+                );
+
+                
+
+                System.MainDiv.appendChild( OpenWindow(tmp,{"id":"new_product","close":true,"xy":{
+                    "x":e.clientX,
+                    "y":e.clientY
+                }}) );
+
+            }})
+        }
+    };
+
+
+    System.MainDiv.appendChild( RowMake(menu) );
+    MainDivSetTimeout();
+}
+
+
+function Order()
+{
+    System.MainDiv.appendChild( RowMake({}) );
+    MainDivSetTimeout();
+}
 
 function MainDivSetTimeout()
 {
