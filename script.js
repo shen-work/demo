@@ -743,6 +743,11 @@ function Stock()
 
                     td = document.createElement("td");
                     var obj = TextCr("text",{"id":k});
+                    if(k!="name")
+                    {
+                        obj = TextCr("number",{"id":k});
+                    }
+
                     if(k=="on") 
                     {
                         obj = document.createDocumentFragment();
@@ -769,21 +774,21 @@ function Stock()
 
                         var _data = {};
 
-                        for(var k in input)
+                        for(var i=0;input<input.length;i++)
                         {
-                            if(input[k].id=="on")
+                            if(input[i].id=="on")
                             {
-                                if( input[k].checked==true )
-                                _data[ input[k].id ] = input[k].value;
+                                if( input[i].checked==true )
+                                _data[ input[i].id ] = input[i].value;
                             }
                             else
                             {
-                                _data[ input[k].id ] = input[k].value;
+                                _data[ input[i].id ] = input[i].value;
                             }
                         }
 
                         _data.time = System.ServerTime;
-                        
+
                         DB.ref("member/"+System.gapi.currentUser.get().Aa+"/product").push(_data);
 
                         var msg = document.createElement("div");
