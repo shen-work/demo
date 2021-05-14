@@ -774,7 +774,7 @@ function Stock()
 
                         var _data = {};
 
-                        for(var i=0;input<input.length;i++)
+                        for(var i=0;i<input.length;i++)
                         {
                             if(input[i].value=="")
                             {
