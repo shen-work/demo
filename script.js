@@ -8,6 +8,15 @@ var DB = firebase;
 DB.initializeApp({databaseURL: "https://shen-member-default-rtdb.firebaseio.com/"});
 
 var System = {
+    "menu":{
+        "Test":{"name":"測試系統"},
+        "Member":{"name":"帳號管理"},
+        "YT":{"name":"YouTube內嵌播放"},
+        "Chat":{"name":"聊天室功能"},
+        "Shop":{"name":"購物車功能"},
+        "Stock":{"name":"庫存管理"},
+        "Order":{"name":"定單管理"},
+    },
     "now_page":"",
     "ServerTime":firebase.database.ServerValue.TIMESTAMP,
     "tmp":{},
@@ -19,6 +28,19 @@ var System = {
         "count":"數量",
         "price":"價錢",
         "on":"上/下架"
+    },
+    "order":{
+        "sn":"定單編號",
+        "detail":"定單內容",
+        "time":"下單時間"
+    },
+    "on":{
+        "on":"上架",
+        "off":"下架"
+    },
+    "order_status":{
+        "ok":"交易成立",
+        "count":"數量不足,交易未成立"
     },
     "client_id":"506821759724-fq3jm7jq7llvnp7tqui2493kupkknvvp.apps.googleusercontent.com",
     //"GAKey":"AIzaSyCEe6fZN3JCszefiJ8qLTpCn-HlCNTGjNo",
@@ -48,6 +70,15 @@ window.onload = function()
     System.gapi._logout = System.gapi.signOut;
     System.gapi._user = System.gapi.currentUser.get().gt;
     */
+    System.gapi.isSignedIn = {"get":function(){return true;}};
+    System.gapi.currentUser = {"get":function(){
+        return {
+            "Aa":"117851722309842781944",
+            "gt":JSON.parse("{\"GS\":\"117851722309842781944\",\"Te\":\"黃仕軒\",\"rU\":\"仕軒\",\"mS\":\"黃\",\"zJ\":\"https://lh3.googleusercontent.com/a/AATXAJyhVEEcd8ALJo3jugjlpz_GMQS5a0clatX0F6yn=s96-c\",\"Rt\":\"shen103227@gmail.com\"}")
+        };
+    }};
+
+
 
     DB = DB.database();
 
@@ -113,15 +144,7 @@ function MenuLi()
     var div = document.createElement("div");
     div.id = "Menu";
     var ul = document.createElement("ul");
-    var list = {
-        "Test":{"name":"測試系統"},
-        "Member":{"name":"帳號管理"},
-        "YT":{"name":"YouTube內嵌播放"},
-        "Chat":{"name":"聊天室功能"},
-        "Shop":{"name":"購物車功能"},
-        "Stock":{"name":"庫存管理"},
-        "Order":{"name":"定單管理"},
-    }
+    var list = System.menu;
     for(var key in list)
     {
         System.session.menu = System.session.menu||{};
@@ -717,12 +740,455 @@ function Chat()
 
 function Shop()
 {
-    System.MainDiv.appendChild( RowMake({}) );
+    function _Shop(config,r = {})
+    {
+        DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
+
+            shop = shop.val()||{};
+            
+            if(config.mode=="order")
+            {
+                var _order = {};
+                var sold = {};
+
+                _order.time = System.ServerTime;
+                _order.product = {};
+                _order.total_price = 0;
+                _order.order_status = 0;
+
+
+                for(var k in shop)
+                {
+                    var pro = shop[k].product;
+                    _order.product[ k ] = pro;
+
+                    if( r[k].count*1 >= shop[k].count*1 )
+                    {
+                        pro.product_status = "ok";
+
+                        _order.total_price+=shop[k].count*pro.price;
+
+                        sold[ pro.user.GS ] = sold[ pro.user.GS ]||{
+                            "product":{},
+                            "time":System.ServerTime
+                        };
+    
+                        pro.count = shop[k].count
+                        sold[ pro.user.GS ].product[ k ] = pro;
+
+                        DB.ref("product/"+k+"/count").set(r[k].count-shop[k].count);
+                    }
+                    else
+                    {
+                        pro.product_status = "count";
+                    }
+                }
+
+                
+
+                DBGetId(DB,"order/"+System.gapi.currentUser.get().Aa+"/buy/",function(sn){
+
+                    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/buy/"+sn).set(
+                        _order
+                    );
+
+                });
+                
+
+                for(var sold_id in sold)
+                {
+                    var sold_order = sold[sold_id];
+                    sold_order.buy = System.gapi.currentUser.get().gt;
+                    sold_order.total_price = 0;
+                    sold_order.order_status = 0;
+                    for(var p_id in sold_order.product)
+                    {
+                        sold_order.total_price+=
+                        sold_order.product[p_id].price*sold_order.product[p_id].count;
+                    }
+
+                    DBGetId(DB,"order/"+sold_id+"/sold/",function(sn){
+
+                        DB.ref("order/"+sold_id+"/sold/"+sn).set(
+                            sold[sold_id]
+                        );
+    
+                    });
+                }
+
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").remove();
+
+                var msg = document.createElement("div");
+                msg.innerHTML = "結帳成功，請至定單管理確認結果";
+                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick("Order","open");}}) );
+
+                return;
+            }
+
+
+
+            _data = {};
+            _data.time = System.ServerTime;
+            _data.product = r;
+            _data.count = config.count;
+            
+            if(config.mode=="buy")
+            {
+                if( Object.keys(shop).indexOf(config.id)!=-1)
+                {
+                    _data = shop[config.id];
+                    _data.count-=-1*config.count;
+                }
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
+
+                shop[config.id] = _data;
+            }
+            if(config.mode=="count")
+            {
+                _data.count=config.count;
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
+
+                shop[config.id] = _data;
+            }
+
+
+            
+
+            if(config.mode=="remove")
+            {
+                delete shop[config.id];
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).remove();
+            }
+        
+
+            var tmp = document.createDocumentFragment();
+
+            var table,tr,td;
+            table = document.createElement("table");
+            table.className = "ListTable";
+        
+            tr = document.createElement("tr");
+
+            var total_price = 0;
+            var top_row = JSON.parse(JSON.stringify(System.product));
+            top_row.price_total = "單品項總價";
+            delete top_row.on;
+        
+            for(var k in top_row)
+            {
+                td = document.createElement("td");
+                td.innerHTML = top_row[k];
+                tr.appendChild(td);
+            }
+        
+            td = document.createElement("td");
+            td.innerHTML = "";
+            tr.appendChild(td);
+            table.appendChild(tr);
+        
+            
+            for(var id in shop)
+            {
+                var _data = shop[id];
+    
+                tr = document.createElement("tr");
+                tr.id = id;
+    
+                
+                for(var k in top_row)
+                {    
+                    td = document.createElement("td");
+
+                    
+                    td.innerHTML = _data.product[k];
+
+                    if(k=="count")
+                    {
+                        td.innerHTML = "";
+                        td.appendChild(
+                            TextCr("number",{"id":id,"value":_data.count,"style":"width:50px;"},{"change":function(){
+                                _Submit({"id":this.id,"mode":"count","count":this.value});
+                            }})
+                        );
+                    }
+
+                    if(k=="price")
+                        td.innerHTML = _data.product.price;
+
+                    if(k=="price_total")
+                        td.innerHTML = _data.count * _data.product.price;
+
+                    tr.appendChild(td);
+                }
+
+                total_price+=_data.count * _data.product.price;
+    
+                td = document.createElement("td");
+                td.appendChild(
+                    TextCr("button",{"id":id,"value":"移出購物車"},{"click":function(e){
+                        
+                        
+                        _Submit( {"id":this.id,"mode":"remove"} );
+    
+                    }})
+                );
+    
+    
+                tr.appendChild(td);
+                table.appendChild(tr);
+            }
+            tr = document.createElement("tr");
+
+            tr.innerHTML = `
+            <td></td>
+            <td></td>
+            <td>總價</td>
+            <td>`+total_price+`</td>
+            <td></td>
+            `;
+            tr.querySelectorAll("td")[4].appendChild(
+
+                TextCr("button",{"value":"結帳"},{"click":function(){
+                    
+                    _Submit({"mode":"order","id":""})
+
+                }})
+            );
+            table.appendChild(tr);
+
+        
+            tmp.appendChild(table);
+
+            if(document.querySelector("#shop_car")!=null)
+                document.querySelector("#shop_car").remove();
+
+            
+            System.MainDiv.appendChild( OpenWindow(tmp,{"id":"shop_car","close":true}) );
+            
+            return;
+
+
+        });
+    }
+
+
+    function _Submit(config)
+    {
+        if(System.gapi.isSignedIn.get()!=true)
+        {
+            var msg = document.createElement("div");
+            msg.innerHTML = "請先登入帳號";
+            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+            return;
+        }
+
+
+        DB.ref("product/"+config.id).once("value",r=>{
+
+            r = r.val();
+
+            _Shop(config,r);
+
+        });
+    }
+
+    var tmp = document.createDocumentFragment();
+
+    tmp.appendChild( TextCr("button",{"value":"購物車內容"},{"click":function(e){
+
+        _Shop({},{});
+
+    }}));
+    
+    var table,tr,td;
+    table = document.createElement("table");
+    table.className = "ListTable";
+
+    tr = document.createElement("tr");
+
+    var top_row = JSON.parse(JSON.stringify(System.product));
+    delete top_row.on;
+
+    for(var k in top_row)
+    {
+        td = document.createElement("td");
+        td.innerHTML = top_row[k];
+        tr.appendChild(td);
+    }
+
+    td = document.createElement("td");
+    td.innerHTML = "";
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    DB.ref("product").orderByChild("on").equalTo("on").once("value",r=>{
+
+        r = r.val();
+
+        for(var id in r)
+        {
+            var _data = r[id];
+
+            tr = document.createElement("tr");
+            tr.id = id;
+
+            for(var k in top_row)
+            {
+                td = document.createElement("td");
+                td.innerHTML = _data[k];
+                if(k=="count")
+                {
+                    td.innerHTML = "";
+                    td.appendChild(
+                        TextCr("number",{"id":id,"value":"1","style":"width:50px;"})
+                    );
+                }
+                
+                tr.appendChild(td);
+            }
+
+            td = document.createElement("td");
+            td.appendChild(
+                TextCr("button",{"id":id,"value":"放入購物車"},{"click":function(e){
+                    
+                    
+                    _Submit( {"id":this.id,"mode":"buy","count":document.querySelector("[id='"+this.id+"'][type=number").value} );
+
+                }})
+            );
+
+
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
+        MainDivSetTimeout();
+    });
+
+    tmp.appendChild(table);
+
+
+    DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
+        if(shop.val()!=null)
+        {
+            _Shop({},{});
+        }
+    });
+
+
+
+    System.MainDiv.appendChild( tmp );
     MainDivSetTimeout();
 }
 
 function Stock()
 {
+    function _Submit(table,config)
+    {
+        if(System.gapi.isSignedIn.get()!=true)
+        {
+            var msg = document.createElement("div");
+            msg.innerHTML = "請先登入帳號";
+            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+            return;
+        }
+
+
+        var input = table.querySelectorAll("input:not([type=button])");
+
+        var _data = {};
+
+        for(var i=0;i<input.length;i++)
+        {
+            if(input[i].value=="")
+            {
+                var msg = document.createElement("div");
+                msg.innerHTML = "欄位不可空白";
+                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+                return;
+            }
+
+            if(input[i].id=="on")
+            {
+                if( input[i].checked==true )
+                _data[ input[i].id ] = input[i].value;
+            }
+            else
+            {
+                _data[ input[i].id ] = input[i].value;
+            }
+        }
+
+        _data.time = System.ServerTime;
+        _data.user = System.gapi.currentUser.get().gt;
+        
+        var word;
+        if(config.mode=="push")
+        {
+            DB.ref("product").push(_data);
+            word = "新增完成";
+        }
+
+        if(config.mode=="update")
+        {
+            DB.ref("product/"+config.id).update(_data);
+            word = "編輯完成";
+        }
+
+        if(config.mode=="remove")
+        {
+            
+            DB.ref("product/"+config.id).remove();
+            word = "刪除完成";
+        }
+
+
+        var msg = document.createElement("div");
+        msg.innerHTML = word;
+        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
+        return;
+    }
+
+    function _Detail(data = {})
+    {
+        var table = document.createElement("table");
+        table.className = "ListTable";
+
+        for(var k in System.product)
+        {        
+            var tr = document.createElement("tr");
+
+            var td = document.createElement("td");
+            td.innerHTML = System.product[k];
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            var obj = TextCr("text",{"id":k,"value":data[k]||""});
+            if(k!="name")
+            {
+                obj = TextCr("number",{"id":k,"value":data[k]||"0"});
+            }
+
+            if(k=="on") 
+            {
+                obj = document.createDocumentFragment();
+                obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"on"}) );
+                obj.appendChild( SpanCr("上架") );
+                obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"off"}) );
+                obj.appendChild( SpanCr("下架") );
+            }
+            td.appendChild( obj );
+            
+            tr.appendChild(td);
+
+            table.appendChild(tr);
+        }
+        
+        table.querySelector("[name='on'][value='"+(data.on||"off")+"']").checked = true
+
+        return table;
+    }
+
+
     var menu = {
         "new_product_btn":{
             "html":TextCr("button",{"value":"新增商品"},{"click":function(e){
@@ -730,82 +1196,15 @@ function Stock()
                 
                 var tmp = document.createDocumentFragment();
 
-                var table = document.createElement("table");
-                table.className = "ListTable";
-
-                for(var k in System.product)
-                {        
-                    var tr = document.createElement("tr");
-
-                    var td = document.createElement("td");
-                    td.innerHTML = System.product[k];
-                    tr.appendChild(td);
-
-                    td = document.createElement("td");
-                    var obj = TextCr("text",{"id":k});
-                    if(k!="name")
-                    {
-                        obj = TextCr("number",{"id":k});
-                    }
-
-                    if(k=="on") 
-                    {
-                        obj = document.createDocumentFragment();
-                        obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"on"}) );
-                        obj.appendChild( SpanCr("上架") );
-                        obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"off","checked":true}) );
-                        obj.appendChild( SpanCr("下架") );
-                    }
-                    td.appendChild( obj );
-                    
-                    tr.appendChild(td);
-        
-                    table.appendChild(tr);
-                }
-                
-
-                tmp.appendChild(table);
+                var table = _Detail()
+                tmp.appendChild( table );
 
 
                 tmp.appendChild( 
                     TextCr("button",{"value":"送出"},{"click":function(){
 
-                        var input = table.querySelectorAll("input:not([type=button])");
+                        _Submit(table,{"mode":"push"});
 
-                        var _data = {};
-
-                        for(var i=0;i<input.length;i++)
-                        {
-                            if(input[i].value=="")
-                            {
-                                var msg = document.createElement("div");
-                                msg.innerHTML = "欄位不可空白";
-                                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
-                                return;
-                            }
-
-                            if(input[i].id=="on")
-                            {
-                                if( input[i].checked==true )
-                                _data[ input[i].id ] = input[i].value;
-                            }
-                            else
-                            {
-                                _data[ input[i].id ] = input[i].value;
-                            }
-                        }
-
-                        
-
-                        _data.time = System.ServerTime;
-
-                        console.log(_data);
-                        DB.ref("member/"+System.gapi.currentUser.get().Aa+"/product").push(_data);
-
-                        var msg = document.createElement("div");
-                        msg.innerHTML = "新增完成";
-                        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
-                        return;
                     }}) 
                 );
 
@@ -817,6 +1216,117 @@ function Stock()
                 }}) );
 
             }})
+        },
+        "product_list":{
+            "html":(function(){
+
+                var tmp = document.createDocumentFragment();
+                var table,tr,td;
+
+                table = document.createElement("table");
+                table.className = "ListTable";
+
+
+                tr = document.createElement("tr");
+
+                for(var k in System.product)
+                {
+                    td = document.createElement("td");
+                    td.innerHTML = System.product[k];
+                    tr.appendChild(td);
+                }
+
+                td = document.createElement("td");
+                td.innerHTML = "管理";
+                tr.appendChild(td);
+                table.appendChild(tr);
+
+                DB.ref("product").orderByChild("user/GS").equalTo(System.gapi.currentUser.get().Aa).once("value",r=>{
+
+                    r = r.val();
+
+                    for(var id in r)
+                    {
+                        var _data = r[id];
+
+                        tr = document.createElement("tr");
+                        tr.id = id;
+
+                        for(var k in System.product)
+                        {
+                            td = document.createElement("td");
+                            td.innerHTML = _data[k];
+                            if(k=="on")
+                                td.innerHTML = System.on[_data[k]];
+                            tr.appendChild(td);
+                        }
+
+                        td = document.createElement("td");
+                        td.appendChild(
+                            TextCr("button",{"id":id,"value":"管理"},{"click":function(e){
+                                
+                                var tmp = document.createDocumentFragment();
+
+                                var table = _Detail( r[this.id] );
+                                tmp.appendChild( table );
+
+                                tmp.appendChild(
+                                    TextCr("button",{"id":this.id,"value":"修改"},{"click":function(){
+
+                                        _Submit(table,{"mode":"update","id":this.id});
+
+                                    }}) 
+                                );
+
+                                System.MainDiv.appendChild( OpenWindow(tmp,{"id":"new_product","close":true,"xy":{
+                                    "x":e.clientX,
+                                    "y":e.clientY
+                                }}) );
+                                
+
+                            }})
+                        );
+                        td.appendChild(
+                            TextCr("button",{"value":"刪除","id":id},{"click":function(e){
+                                
+                                var msg = document.createElement("div");
+                                msg.innerHTML = "確定要刪除該商品嗎";
+
+                                msg.appendChild( 
+                                    document.createElement("br")
+                                );
+                                msg.appendChild(
+                                    TextCr("button",{"id":this.id,"value":"確定","xy":{"x":e.clientX,"y":e.clientY}},{"click":function(){
+
+                                        _Submit(table,{"mode":"remove","id":this.id});
+
+                                    }}) 
+                                );
+
+                                msg.appendChild(
+                                    TextCr("button",{"id":this.id,"value":"取消","xy":{"x":e.clientX,"y":e.clientY}},{"click":function(){
+                                        msg.parentElement.remove();
+                                    }}) 
+                                );
+
+                                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Confirm","xy":{"x":e.clientX,"y":e.clientY}}) );
+                                return;
+
+                            }})
+                        );
+
+
+                        tr.appendChild(td);
+                        table.appendChild(tr);
+                    }
+                    MainDivSetTimeout();
+                });
+
+                tmp.appendChild(table);
+                
+                return tmp;
+                
+            })()
         }
     };
 
@@ -828,7 +1338,147 @@ function Stock()
 
 function Order()
 {
-    System.MainDiv.appendChild( RowMake({}) );
+    System.session[System.now_page] = 
+    System.session[System.now_page]||"buy";
+
+    var tmp = document.createDocumentFragment();
+
+    tmp.appendChild( TextCr("button",{"value":"買家定單"},{"click":function(e){
+        System.session[System.now_page] = "buy";
+        sessionStorage.shen = JSON.stringify(System.session);
+        MenuClick(System.now_page,"open");
+    }}));
+
+    tmp.appendChild( TextCr("button",{"value":"賣家定單"},{"click":function(e){
+        System.session[System.now_page] = "sold";
+        sessionStorage.shen = JSON.stringify(System.session);
+        MenuClick(System.now_page,"open");
+    }}));
+
+    var table,tr,td;
+    table = document.createElement("table");
+    table.className = "ListTable";
+
+    tr = document.createElement("tr");
+
+    var top_row = JSON.parse(JSON.stringify(System.order));
+    delete top_row.on;
+
+    for(var k in top_row)
+    {
+        td = document.createElement("td");
+        td.innerHTML = top_row[k];
+        tr.appendChild(td);
+    }
+
+    td = document.createElement("td");
+    td.innerHTML = "";
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+
+    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]).once("value",r=>{
+
+        r = r.val();
+
+        for(var id in r)
+        {
+            var _data = r[id];
+            _data.sn = id;
+
+            tr = document.createElement("tr");
+            tr.id = id;
+
+            for(var k in top_row)
+            {
+                td = document.createElement("td");
+                td.innerHTML = _data[k]||"";
+
+                if(k=="detail")
+                {
+                    td.innerHTML = "";
+                    
+                    var html = document.createElement("table");
+                    html.className = "ListTable";
+                    html.innerHTML = `
+                    <tr>
+                    <td>商品</td>
+                    <td>數量</td>
+                    <td>單價</td>
+                    <td>小計</td>
+                    <td>狀態</td>
+                    </tr>`;
+
+                    for(var p_id in _data.product)
+                    {
+                        var product_info = _data.product[p_id];
+                        if(product_info.name==undefined)
+                        {
+                            product_info = product_info.product;
+                            product_info.count = _data.product[p_id].count;
+                        }
+
+                        html.innerHTML += `
+                        <tr class="`+product_info.product_status+`">
+                        <td>`+product_info.name+`</td>
+                        <td>`+product_info.count+`</td>
+                        <td>`+product_info.price+`</td>
+                        <td>`+product_info.count*product_info.price+`</td>
+                        <td>`+System.order_status[product_info.product_status]+`</td>
+                        </tr>`;
+                    }
+
+                    html.innerHTML += `
+                    <tr>
+                    <td></td>
+                    <td></td>
+                    <td>總計</td>
+                    <td>`+_data.total_price+`</td>
+                    <td></td>
+                    </tr>`;
+
+                    if(System.session[System.now_page]=="sold")
+                    {
+                        html.innerHTML += `
+                        <tr>
+                        <td>買家資訊</td>
+                        <td>`+_data.buy.Rt+`</td>
+                        <td>`+_data.buy.Te+`</td>
+                        <td></td>
+                        <td></td>
+                        </tr>`;
+                    }
+
+
+                    td.appendChild(html);
+                }
+
+
+                if(k=="time")
+                    td.innerHTML = DateFormat( new Date(_data[k]),false );
+                
+                tr.appendChild(td);
+            }
+
+            td = document.createElement("td");
+            td.appendChild(
+                TextCr("button",{"id":id,"value":"管理"},{"click":function(e){
+                    
+                }})
+            );
+
+
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
+        MainDivSetTimeout();
+    });
+
+    tmp.appendChild(table);
+
+
+
+    System.MainDiv.appendChild( tmp );
     MainDivSetTimeout();
 }
 
@@ -1147,7 +1797,7 @@ function DBGetId(DB,path,func)
                 id = key-(-1);
         }
 
-        func.call(this,id);
+        func(id);
     });
 }
 

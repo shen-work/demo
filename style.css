@@ -215,7 +215,9 @@ input.number{
     cursor: no-drop;
 }
 
-
+.ListTable tr.count td{
+    text-decoration-line: line-through;
+}
 
 
 
