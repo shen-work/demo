@@ -13,7 +13,8 @@ var System = {
         "Member":{"name":"帳號管理"},
         "YT":{"name":"YouTube內嵌播放"},
         "Chat":{"name":"聊天室功能"},
-        "Shop":{"name":"購物車功能"},
+        "Shop":{"name":"購買商品功能"},
+        "Car":{"name":"購物車功能"},
         "Stock":{"name":"庫存管理"},
         "Order":{"name":"定單管理"},
     },
@@ -32,7 +33,9 @@ var System = {
     "order":{
         "sn":"定單編號",
         "detail":"定單內容",
-        "time":"下單時間"
+        "time":"下單時間",
+        "time_end":"處理時間",
+        "order_status":"定單狀態"
     },
     "on":{
         "on":"上架",
@@ -40,7 +43,12 @@ var System = {
     },
     "order_status":{
         "ok":"交易成立",
-        "count":"數量不足,交易未成立"
+        "count":"數量不足,交易未成立",
+        "0":"尚未處理",
+        "1":"買家已付款",
+        "2":"賣家已出貨",
+        "3":"已出貨",
+        "4":"已到貨"
     },
     "client_id":"506821759724-fq3jm7jq7llvnp7tqui2493kupkknvvp.apps.googleusercontent.com",
     //"GAKey":"AIzaSyCEe6fZN3JCszefiJ8qLTpCn-HlCNTGjNo",
@@ -740,263 +748,11 @@ function Chat()
 
 function Shop()
 {
-    function _Shop(config,r = {})
-    {
-        DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
-
-            shop = shop.val()||{};
-            
-            if(config.mode=="order")
-            {
-                var _order = {};
-                var sold = {};
-
-                _order.time = System.ServerTime;
-                _order.product = {};
-                _order.total_price = 0;
-                _order.order_status = 0;
-
-
-                for(var k in shop)
-                {
-                    var pro = shop[k].product;
-                    _order.product[ k ] = pro;
-
-                    if( r[k].count*1 >= shop[k].count*1 )
-                    {
-                        pro.product_status = "ok";
-
-                        _order.total_price+=shop[k].count*pro.price;
-
-                        sold[ pro.user.GS ] = sold[ pro.user.GS ]||{
-                            "product":{},
-                            "time":System.ServerTime
-                        };
-    
-                        pro.count = shop[k].count
-                        sold[ pro.user.GS ].product[ k ] = pro;
-
-                        DB.ref("product/"+k+"/count").set(r[k].count-shop[k].count);
-                    }
-                    else
-                    {
-                        pro.product_status = "count";
-                    }
-                }
-
-                
-
-                DBGetId(DB,"order/"+System.gapi.currentUser.get().Aa+"/buy/",function(sn){
-
-                    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/buy/"+sn).set(
-                        _order
-                    );
-
-                });
-                
-
-                for(var sold_id in sold)
-                {
-                    var sold_order = sold[sold_id];
-                    sold_order.buy = System.gapi.currentUser.get().gt;
-                    sold_order.total_price = 0;
-                    sold_order.order_status = 0;
-                    for(var p_id in sold_order.product)
-                    {
-                        sold_order.total_price+=
-                        sold_order.product[p_id].price*sold_order.product[p_id].count;
-                    }
-
-                    DBGetId(DB,"order/"+sold_id+"/sold/",function(sn){
-
-                        DB.ref("order/"+sold_id+"/sold/"+sn).set(
-                            sold[sold_id]
-                        );
-    
-                    });
-                }
-
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").remove();
-
-                var msg = document.createElement("div");
-                msg.innerHTML = "結帳成功，請至定單管理確認結果";
-                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick("Order","open");}}) );
-
-                return;
-            }
-
-
-
-            _data = {};
-            _data.time = System.ServerTime;
-            _data.product = r;
-            _data.count = config.count;
-            
-            if(config.mode=="buy")
-            {
-                if( Object.keys(shop).indexOf(config.id)!=-1)
-                {
-                    _data = shop[config.id];
-                    _data.count-=-1*config.count;
-                }
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
-
-                shop[config.id] = _data;
-            }
-            if(config.mode=="count")
-            {
-                _data.count=config.count;
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
-
-                shop[config.id] = _data;
-            }
-
-
-            
-
-            if(config.mode=="remove")
-            {
-                delete shop[config.id];
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).remove();
-            }
-        
-
-            var tmp = document.createDocumentFragment();
-
-            var table,tr,td;
-            table = document.createElement("table");
-            table.className = "ListTable";
-        
-            tr = document.createElement("tr");
-
-            var total_price = 0;
-            var top_row = JSON.parse(JSON.stringify(System.product));
-            top_row.price_total = "單品項總價";
-            delete top_row.on;
-        
-            for(var k in top_row)
-            {
-                td = document.createElement("td");
-                td.innerHTML = top_row[k];
-                tr.appendChild(td);
-            }
-        
-            td = document.createElement("td");
-            td.innerHTML = "";
-            tr.appendChild(td);
-            table.appendChild(tr);
-        
-            
-            for(var id in shop)
-            {
-                var _data = shop[id];
-    
-                tr = document.createElement("tr");
-                tr.id = id;
-    
-                
-                for(var k in top_row)
-                {    
-                    td = document.createElement("td");
-
-                    
-                    td.innerHTML = _data.product[k];
-
-                    if(k=="count")
-                    {
-                        td.innerHTML = "";
-                        td.appendChild(
-                            TextCr("number",{"id":id,"value":_data.count,"style":"width:50px;"},{"change":function(){
-                                _Submit({"id":this.id,"mode":"count","count":this.value});
-                            }})
-                        );
-                    }
-
-                    if(k=="price")
-                        td.innerHTML = _data.product.price;
-
-                    if(k=="price_total")
-                        td.innerHTML = _data.count * _data.product.price;
-
-                    tr.appendChild(td);
-                }
-
-                total_price+=_data.count * _data.product.price;
-    
-                td = document.createElement("td");
-                td.appendChild(
-                    TextCr("button",{"id":id,"value":"移出購物車"},{"click":function(e){
-                        
-                        
-                        _Submit( {"id":this.id,"mode":"remove"} );
-    
-                    }})
-                );
-    
-    
-                tr.appendChild(td);
-                table.appendChild(tr);
-            }
-            tr = document.createElement("tr");
-
-            tr.innerHTML = `
-            <td></td>
-            <td></td>
-            <td>總價</td>
-            <td>`+total_price+`</td>
-            <td></td>
-            `;
-            tr.querySelectorAll("td")[4].appendChild(
-
-                TextCr("button",{"value":"結帳"},{"click":function(){
-                    
-                    _Submit({"mode":"order","id":""})
-
-                }})
-            );
-            table.appendChild(tr);
-
-        
-            tmp.appendChild(table);
-
-            if(document.querySelector("#shop_car")!=null)
-                document.querySelector("#shop_car").remove();
-
-            
-            System.MainDiv.appendChild( OpenWindow(tmp,{"id":"shop_car","close":true}) );
-            
-            return;
-
-
-        });
-    }
-
-
-    function _Submit(config)
-    {
-        if(System.gapi.isSignedIn.get()!=true)
-        {
-            var msg = document.createElement("div");
-            msg.innerHTML = "請先登入帳號";
-            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
-            return;
-        }
-
-
-        DB.ref("product/"+config.id).once("value",r=>{
-
-            r = r.val();
-
-            _Shop(config,r);
-
-        });
-    }
-
     var tmp = document.createDocumentFragment();
 
     tmp.appendChild( TextCr("button",{"value":"購物車內容"},{"click":function(e){
 
-        _Shop({},{});
+        MenuClick("Car","open");
 
     }}));
     
@@ -1051,8 +807,7 @@ function Shop()
             td.appendChild(
                 TextCr("button",{"id":id,"value":"放入購物車"},{"click":function(e){
                     
-                    
-                    _Submit( {"id":this.id,"mode":"buy","count":document.querySelector("[id='"+this.id+"'][type=number").value} );
+                    _ShopFunc( {"id":this.id,"mode":"buy","count":document.querySelector("[id='"+this.id+"'][type=number").value} );
 
                 }})
             );
@@ -1067,18 +822,121 @@ function Shop()
     tmp.appendChild(table);
 
 
-    DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
-        if(shop.val()!=null)
-        {
-            _Shop({},{});
-        }
-    });
-
-
-
     System.MainDiv.appendChild( tmp );
     MainDivSetTimeout();
 }
+
+function Car()
+{
+    DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
+
+        shop = shop.val()||{};
+        
+
+        var tmp = document.createDocumentFragment();
+
+        var table,tr,td;
+        table = document.createElement("table");
+        table.className = "ListTable";
+    
+        tr = document.createElement("tr");
+
+        var total_price = 0;
+        var top_row = JSON.parse(JSON.stringify(System.product));
+        top_row.price_total = "單品項總價";
+        delete top_row.on;
+    
+        for(var k in top_row)
+        {
+            td = document.createElement("td");
+            td.innerHTML = top_row[k];
+            tr.appendChild(td);
+        }
+    
+        td = document.createElement("td");
+        td.innerHTML = "";
+        tr.appendChild(td);
+        table.appendChild(tr);
+    
+        
+        for(var id in shop)
+        {
+            var _data = shop[id];
+
+            tr = document.createElement("tr");
+            tr.id = id;
+
+            
+            for(var k in top_row)
+            {    
+                td = document.createElement("td");
+
+                
+                td.innerHTML = _data.product[k];
+
+                if(k=="count")
+                {
+                    td.innerHTML = "";
+                    td.appendChild(
+                        TextCr("number",{"id":id,"value":_data.count,"style":"width:50px;"},{"change":function(){
+                            _ShopFunc({"id":this.id,"mode":"count","count":this.value});
+                        }})
+                    );
+                }
+
+                if(k=="price")
+                    td.innerHTML = _data.product.price;
+
+                if(k=="price_total")
+                    td.innerHTML = _data.count * _data.product.price;
+
+                tr.appendChild(td);
+            }
+
+            total_price+=_data.count * _data.product.price;
+
+            td = document.createElement("td");
+            td.appendChild(
+                TextCr("button",{"id":id,"value":"移出購物車"},{"click":function(e){
+                    
+                    
+                    _ShopFunc( {"id":this.id,"mode":"remove"} );
+
+                }})
+            );
+
+
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
+        tr = document.createElement("tr");
+
+        tr.innerHTML = `
+        <td></td>
+        <td></td>
+        <td>總價</td>
+        <td>`+total_price+`</td>
+        <td></td>
+        `;
+        tr.querySelectorAll("td")[4].appendChild(
+
+            TextCr("button",{"value":"結帳"},{"click":function(){
+                
+                _ShopFunc({"mode":"order","id":""})
+
+            }})
+        );
+        table.appendChild(tr);
+
+    
+        tmp.appendChild(table);
+
+        
+        System.MainDiv.appendChild( tmp );
+        MainDivSetTimeout();
+    });
+}
+
 
 function Stock()
 {
@@ -1371,23 +1229,28 @@ function Order()
         tr.appendChild(td);
     }
 
-    td = document.createElement("td");
-    td.innerHTML = "";
-    tr.appendChild(td);
-    table.appendChild(tr);
+    if(System.session[System.now_page]=="sold")
+    {
+        td = document.createElement("td");
+        td.innerHTML = "";
+        tr.appendChild(td);
+        table.appendChild(tr);
+    }
 
-
-    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]).once("value",r=>{
+    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]).orderByKey().once("value",r=>{
 
         r = r.val();
+
+        for(var id in r){r[id].sn = id;}
+
+        r = Sort(r,["time desc"]);
 
         for(var id in r)
         {
             var _data = r[id];
-            _data.sn = id;
 
             tr = document.createElement("tr");
-            tr.id = id;
+            tr.id = _data.sn;
 
             for(var k in top_row)
             {
@@ -1408,6 +1271,8 @@ function Order()
                     <td>小計</td>
                     <td>狀態</td>
                     </tr>`;
+
+                    
 
                     for(var p_id in _data.product)
                     {
@@ -1441,9 +1306,9 @@ function Order()
                     {
                         html.innerHTML += `
                         <tr>
-                        <td>買家資訊</td>
-                        <td>`+_data.buy.Rt+`</td>
-                        <td>`+_data.buy.Te+`</td>
+                        <td>買家資訊<BR>`+_data.buy.Rt+`<BR>`+_data.buy.Te+`</td>
+                        <td></td>
+                        <td></td>
                         <td></td>
                         <td></td>
                         </tr>`;
@@ -1454,21 +1319,81 @@ function Order()
                 }
 
 
-                if(k=="time")
-                    td.innerHTML = DateFormat( new Date(_data[k]),false );
+                if(k=="time" || k=="time_end")
+                    td.innerHTML = DateFormat( new Date(_data[k]),"<BR>" );
+
+                if(k=="order_status")
+                    td.innerHTML = System.order_status[_data[k]];
                 
                 tr.appendChild(td);
             }
 
-            td = document.createElement("td");
-            td.appendChild(
-                TextCr("button",{"id":id,"value":"管理"},{"click":function(e){
-                    
-                }})
-            );
+            if(System.session[System.now_page]=="sold")
+            {
+                td = document.createElement("td");
+                td.appendChild(
+                    TextCr("button",{"id":_data.sn,"value":"管理" },{"click":function(e){
+
+                        var OrderStatus = document.createDocumentFragment();
+                        var select = document.createElement("select");
+
+                        for(var k in System.order_status)
+                        {
+                            if( isNaN(parseInt(k)) ) continue;
+
+                            select.innerHTML += '<option value="'+k+'">'+System.order_status[k]+'</option>';
+                        }
+
+                        OrderStatus.appendChild(select);
+                        OrderStatus.appendChild( document.createElement("br") );
+                        OrderStatus.appendChild( 
+                            TextCr("button",{"id":this.id,"value":"修改狀態"},{"click":function(){
+                                var _order = {};
+                                for(var k in r) if(r[k].id==this.id) _order = r[k];
+                                
+                                for(var p in _order.product)
+                                {
+                                    _order.product[p].product_status = select.value;
+                                }
+
+                                var upd = _order;
+                                upd.order_status = select.value;
+                                upd.time_end = System.ServerTime;
+                                DB.ref("order/"+System.gapi.currentUser.get().Aa+"/sold/"+_order.sn).update(upd);
+
+                                DB.ref("order/"+_order.buy.GS+"/buy/"+_order.buy_sn).once("value",_buy=>{
+                                    _buy = _buy.val();
+                                    for(var k in _order.product)
+                                    for(var k2 in _buy.product)
+                                    {
+                                        if(k==k2 && _buy.product[k2].product_status!="count")
+                                        {
+                                            DB.ref("order/"+_order.buy.GS+"/buy/"+_order.buy_sn+"/product/"+k2+"/product_status").set(select.value);
+
+                                            DB.ref("order/"+_order.buy.GS+"/buy/"+_order.buy_sn+"/time_end").set(System.ServerTime);
+
+                                            DB.ref("order/"+_order.buy.GS+"/buy/"+_order.buy_sn+"/order_status").set(select.value);
+                                        }
+                                    }
+                                });
 
 
-            tr.appendChild(td);
+                                MenuClick(System.now_page,"open");
+                            }})
+                        );
+                        OrderStatus.appendChild( document.createElement("br") );
+                        
+                        System.MainDiv.appendChild( OpenWindow(OrderStatus,{"id":"OrderStatus","close":true,"xy":{
+                            "x":e.clientX,
+                            "y":e.clientY
+                        }}) );
+
+
+                    }})
+                );
+                tr.appendChild(td);
+            }
+            
             table.appendChild(tr);
         }
         MainDivSetTimeout();
@@ -1948,6 +1873,192 @@ function TextCr(type,attr,event)
 
 
     return obj;
+}
+
+
+function _ShopFunc(config)
+{
+    if(System.gapi.isSignedIn.get()!=true)
+    {
+        var msg = document.createElement("div");
+        msg.innerHTML = "請先登入帳號";
+        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+        return;
+    }
+
+    DB.ref("product/"+config.id).once("value",r=>{
+        r = r.val();
+
+        DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
+
+            shop = shop.val()||{};
+            
+            if(config.mode=="order")
+            {
+                var _order = {};
+                var sold = {};
+
+                _order.time = System.ServerTime;
+                _order.time_end = System.ServerTime;
+                _order.product = {};
+                _order.total_price = 0;
+                _order.order_status = 0;
+
+
+                for(var k in shop)
+                {
+                    var pro = shop[k].product;
+                    _order.product[ k ] = pro;
+
+                    if( r[k].count*1 >= shop[k].count*1 )
+                    {
+                        pro.product_status = "ok";
+
+                        _order.total_price+=shop[k].count*pro.price;
+
+                        sold[ pro.user.GS ] = sold[ pro.user.GS ]||{
+                            "product":{},
+                            "time":System.ServerTime
+                        };
+
+                        pro.count = shop[k].count
+                        sold[ pro.user.GS ].product[ k ] = pro;
+
+                        DB.ref("product/"+k+"/count").set(r[k].count-shop[k].count);
+                    }
+                    else
+                    {
+                        pro.product_status = "count";
+                    }
+                }
+
+                
+
+                DBGetId(DB,"order/"+System.gapi.currentUser.get().Aa+"/buy/",function(sn){
+
+                    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/buy/"+sn).set(
+                        _order
+                    );
+
+                    for(var sold_id in sold)
+                    {
+                        var sold_order = sold[sold_id];
+                        sold_order.buy = System.gapi.currentUser.get().gt;
+                        sold_order.total_price = 0;
+                        sold_order.order_status = 0;
+                        sold_order.buy_sn = sn;
+                        for(var p_id in sold_order.product)
+                        {
+                            sold_order.total_price+=
+                            sold_order.product[p_id].price*sold_order.product[p_id].count;
+                        }
+    
+                        DBGetId(DB,"order/"+sold_id+"/sold/",function(sn){
+    
+                            DB.ref("order/"+sold_id+"/sold/"+sn).set(
+                                sold[sold_id]
+                            );
+    
+                        });
+                    }
+                });
+                
+
+                
+
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").remove();
+
+                var msg = document.createElement("div");
+                msg.innerHTML = "結帳成功，請至定單管理確認結果";
+                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick("Order","open");}}) );
+
+                return;
+            }
+
+
+
+            _data = {};
+            _data.time = System.ServerTime;
+            _data.product = r;
+            _data.count = config.count;
+            
+            if(config.mode=="buy")
+            {
+                if( Object.keys(shop).indexOf(config.id)!=-1)
+                {
+                    _data = shop[config.id];
+                    _data.count-=-1*config.count;
+                }
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
+
+                shop[config.id] = _data;
+            }
+            if(config.mode=="count")
+            {
+                _data.count=config.count;
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
+
+                shop[config.id] = _data;
+            }
+
+
+            if(config.mode=="remove")
+            {
+                delete shop[config.id];
+                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).remove();
+            }
+            MenuClick("Car","open");
+            return;
+        });
+    });
+}
+
+
+//desc 由大到小321 無desc 由小到大123
+function Sort(JsonData,row,opt = {})
+{
+    JsonData = JSON.parse(JSON.stringify(JsonData));
+    var list = [];
+    for(var k in JsonData)
+    {
+        var idx = list.length;
+        list[idx] = JsonData[k];
+        list[idx].id = k;
+    }
+
+    row = row["0"];
+    var desc = row.split(" ")[1];
+    row = row.split(" ")[0].split("/");
+    
+    list.sort(function(a,b){
+
+        var one = a;
+        var two = b;
+        
+        if(desc==="desc")
+        {
+            one = b;
+            two = a;
+        }
+
+        for(var i=0;i<row.length;i++) 
+        {
+            one = one[row[i]]||{};
+            two = two[row[i]]||{};
+        }
+
+        if(opt.object_keys=="1")
+        {
+            one = Object.keys(one||{}).length;
+            two = Object.keys(two||{}).length;
+        }
+        
+        return one - two;
+    });
+    
+
+
+    return list;
 }
 
 
