@@ -2117,7 +2117,7 @@ function GetYtCommentThreads(VideoId,_func)
 
 function ECPapi()
 {
-    var TradeNo = "shen"+System.time
+    var TradeNo = "s"+System.time
     var TradeDate = DateFormat(new Date(System.time));
     
     var ApiRow = {
@@ -2125,11 +2125,11 @@ function ECPapi()
         "MerchantTradeNo":TradeNo,//定單編號 不可重覆
         "MerchantTradeDate":TradeDate,//2012/03/21 15:40:18
         "PaymentType":"aio",
-        "TotalAmount":"999",//金額
+        "TotalAmount":"50",//金額
         "TradeDesc":"TradeDesc",
         "ItemName":"ItemName",
         "ReturnURL":"https://shen-work.github.io/demo/ecp.html",//收到 Server 端付款結果通知後，請正確回應 1|OK。
-        "ChoosePayment":"Credit",
+        "ChoosePayment":"Credit",//
         "CheckMacValue":"",//sha256加密
         "EncryptType":"1"
     }
