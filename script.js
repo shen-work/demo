@@ -2153,6 +2153,7 @@ function ECPapi()
     
     ApiRow.CheckMacValue = sha256(encodeURIComponent(ApiRow.CheckMacValue)).toUpperCase();
 
+    ApiRow.CheckMacValue = NetUrlEncode(ApiRow.CheckMacValue);
 
     var form = document.createElement("form");
     form.action = "https://payment-stage.ecpay.com.tw/Cashier/QueryTradeInfo/V5";
@@ -2172,6 +2173,11 @@ function ECPapi()
     return form;
 }
 
+
+function NetUrlEncode(url)
+{
+    return url.replaceAll("~","%7e").replaceAll(" ","+");
+}
 
 
 
