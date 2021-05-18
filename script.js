@@ -2138,7 +2138,7 @@ function ECPapi()
         "TradeDesc":"TradeDesc",
         "ItemName":"ItemName",
         "ReturnURL":"https://shen-work.github.io/demo/ecp.html",//收到 Server 端付款結果通知後，請正確回應 1|OK。
-        "ChoosePayment":"Credit",//
+        "ChoosePayment":"ALL",//
         "CheckMacValue":"",//sha256加密
         "EncryptType":"1"
     }
