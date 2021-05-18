@@ -2126,8 +2126,8 @@ function ECPapi()
         "MerchantTradeDate":TradeDate,//2012/03/21 15:40:18
         "PaymentType":"aio",
         "TotalAmount":"999",//金額
-        "TradeDesc":"金流串接測試",
-        "ItemName":"商品名稱",
+        "TradeDesc":"TradeDesc",
+        "ItemName":"ItemName",
         "ReturnURL":"https://shen-work.github.io/demo/ecp.html",//收到 Server 端付款結果通知後，請正確回應 1|OK。
         "ChoosePayment":"Credit",
         "CheckMacValue":"",//sha256加密
