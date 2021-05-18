@@ -2131,8 +2131,7 @@ function ECPapi()
         "ReturnURL":"https://shen-work.github.io/demo/ecp.html",//收到 Server 端付款結果通知後，請正確回應 1|OK。
         "ChoosePayment":"Credit",//
         "CheckMacValue":"",//sha256加密
-        "EncryptType":"1",
-        "TimeStamp":new Date().getTime()
+        "EncryptType":"1"
     }
     var HashKey = "5294y06JbISpM5x9";
     var HashIV = "v77hoKGq4kWxNNIS";
@@ -2148,7 +2147,6 @@ function ECPapi()
     "&MerchantTradeNo="+TradeNo+
     "&PaymentType="+ApiRow.PaymentType+
     "&ReturnURL="+ApiRow.ReturnURL+
-    "&TimeStamp="+ApiRow.TimeStamp+
     "&TotalAmount="+ApiRow.TotalAmount+
     "&TradeDesc="+ApiRow.TradeDesc+
     "&HashIV="+HashIV;
@@ -2156,10 +2154,10 @@ function ECPapi()
     
     ApiRow.CheckMacValue = sha256(encodeURIComponent(ApiRow.CheckMacValue)).toUpperCase();
 
-    ApiRow.CheckMacValue = NetUrlEncode(ApiRow.CheckMacValue);
+    //ApiRow.CheckMacValue = NetUrlEncode(ApiRow.CheckMacValue);
 
     var form = document.createElement("form");
-    form.action = "https://payment-stage.ecpay.com.tw/Cashier/QueryTradeInfo/V5";
+    form.action = "https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5";
     form.enctype = "application/x-www-form-urlencoded";
     form.method = "POST";
 
