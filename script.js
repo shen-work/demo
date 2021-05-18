@@ -1676,8 +1676,8 @@ function DateFormat(timestamp,time = false)
     var hms = tmp[4];
 
     tmp = tmp[3] + "/" + 
-        parseInt(new Date(timestamp).getMonth()+1) + "/" + 
-        new Date(timestamp).getDate();
+    LeftZero(parseInt(new Date(timestamp).getMonth()+1),2,0) + "/" + 
+    LeftZero(new Date(timestamp).getDate(),2,0);
 
     if(time===true) tmp = "";
     if(time===false) tmp += " ";
@@ -1690,6 +1690,15 @@ function DateFormat(timestamp,time = false)
 
 
     return tmp;
+}
+
+function LeftZero(val,num,str)
+{
+    while(val.toString().length<num)
+    {
+        val = str.toString() + val.toString();
+    }
+    return val;
 }
 
 
@@ -2152,9 +2161,11 @@ function ECPapi()
     "&HashIV="+HashIV;
     
     
-    ApiRow.CheckMacValue = sha256(encodeURIComponent(ApiRow.CheckMacValue)).toUpperCase();
+    ApiRow.CheckMacValue = sha256(NetUrlEncode(encodeURIComponent(ApiRow.CheckMacValue)).toLowerCase()).toUpperCase();
 
-    //ApiRow.CheckMacValue = NetUrlEncode(ApiRow.CheckMacValue);
+    
+    
+    
 
     var form = document.createElement("form");
     form.action = "https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5";
@@ -2177,7 +2188,7 @@ function ECPapi()
 
 function NetUrlEncode(url)
 {
-    return url.replaceAll("~","%7e").replaceAll(" ","+");
+    return url.replaceAll("%20","+");
 }
 
 
