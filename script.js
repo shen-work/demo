@@ -83,7 +83,8 @@ window.onload = function()
     System.gapi.currentUser = {"get":function(){
         return {
             "Aa":"117851722309842781944",
-            "gt":JSON.parse("{\"GS\":\"117851722309842781944\",\"Te\":\"黃仕軒\",\"rU\":\"仕軒\",\"mS\":\"黃\",\"zJ\":\"https://lh3.googleusercontent.com/a/AATXAJyhVEEcd8ALJo3jugjlpz_GMQS5a0clatX0F6yn=s96-c\",\"Rt\":\"shen103227@gmail.com\"}")
+            "gt":JSON.parse("{\"GS\":\"117851722309842781944\",\"Te\":\"黃仕軒\",\"rU\":\"仕軒\",\"mS\":\"黃\",\"zJ\":\"https://lh3.googleusercontent.com/a/AATXAJyhVEEcd8ALJo3jugjlpz_GMQS5a0clatX0F6yn=s96-c\",\"Rt\":\"shen103227@gmail.com\"}"),
+            "getId":function(){ return "117851722309842781944"; }
         };
     }};
 
@@ -1100,7 +1101,7 @@ function Stock()
                 tr.appendChild(td);
                 table.appendChild(tr);
 
-                DB.ref("product").orderByChild("user/GS").equalTo(System.gapi.currentUser.get().Aa).once("value",r=>{
+                DB.ref("product").orderByChild("user/GS").equalTo(System.gapi.currentUser.get().getId()).once("value",r=>{
 
                     r = r.val();
 
