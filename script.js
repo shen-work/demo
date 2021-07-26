@@ -17,6 +17,7 @@ var System = {
         "Car":{"name":"購物車功能"},
         "Stock":{"name":"庫存管理"},
         "Order":{"name":"定單管理"},
+        "PaymentFlow":{"name":"金流串接"}
     },
     "now_page":"",
     "ServerTime":firebase.database.ServerValue.TIMESTAMP,
@@ -280,7 +281,6 @@ function Test()
     }
 
     System.MainDiv.appendChild( RowMake(menu) );
-    System.MainDiv.appendChild( ECPapi() );
     MainDivSetTimeout();
 }
 
@@ -941,13 +941,13 @@ function Car()
 
 function Stock()
 {
-    function _Submit(table,config)
+    function _Submit(table,config,e)
     {
         if(System.gapi.isSignedIn.get()!=true)
         {
             var msg = document.createElement("div");
             msg.innerHTML = "請先登入帳號";
-            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+            System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"xy":{"x":e.clientX,"y":e.clientY}}) );
             return;
         }
 
@@ -962,7 +962,7 @@ function Stock()
             {
                 var msg = document.createElement("div");
                 msg.innerHTML = "欄位不可空白";
-                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"xy":{"x":e.clientX,"y":e.clientY}}) );
                 return;
             }
 
@@ -1003,7 +1003,7 @@ function Stock()
 
         var msg = document.createElement("div");
         msg.innerHTML = word;
-        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");}}) );
+        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"close_ev":function(){MenuClick(System.now_page,"open");},"xy":{"x":e.clientX,"y":e.clientY}}) );
         return;
     }
 
@@ -1060,9 +1060,9 @@ function Stock()
 
 
                 tmp.appendChild( 
-                    TextCr("button",{"value":"送出"},{"click":function(){
+                    TextCr("button",{"value":"送出"},{"click":function(e){
 
-                        _Submit(table,{"mode":"push"});
+                        _Submit(table,{"mode":"push"},e);
 
                     }}) 
                 );
@@ -1130,9 +1130,8 @@ function Stock()
                                 tmp.appendChild( table );
 
                                 tmp.appendChild(
-                                    TextCr("button",{"id":this.id,"value":"修改"},{"click":function(){
-
-                                        _Submit(table,{"mode":"update","id":this.id});
+                                    TextCr("button",{"id":this.id,"value":"修改"},{"click":function(e){
+                                        _Submit(table,{"mode":"update","id":this.id},e);
 
                                     }}) 
                                 );
@@ -1155,9 +1154,9 @@ function Stock()
                                     document.createElement("br")
                                 );
                                 msg.appendChild(
-                                    TextCr("button",{"id":this.id,"value":"確定","xy":{"x":e.clientX,"y":e.clientY}},{"click":function(){
+                                    TextCr("button",{"id":this.id,"value":"確定","xy":{"x":e.clientX,"y":e.clientY}},{"click":function(e){
 
-                                        _Submit(table,{"mode":"remove","id":this.id});
+                                        _Submit(table,{"mode":"remove","id":this.id},e);
 
                                     }}) 
                                 );
@@ -1230,13 +1229,12 @@ function Order()
         tr.appendChild(td);
     }
 
-    if(System.session[System.now_page]=="sold")
-    {
-        td = document.createElement("td");
-        td.innerHTML = "";
-        tr.appendChild(td);
-        table.appendChild(tr);
-    }
+    
+    td = document.createElement("td");
+    td.innerHTML = "";
+    tr.appendChild(td);
+    table.appendChild(tr);
+    
 
     DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]).orderByKey().once("value",r=>{
 
@@ -1328,8 +1326,43 @@ function Order()
                 
                 tr.appendChild(td);
             }
+            if(System.session[System.now_page]=="buy")
+            {
+                td = document.createElement("td");
+                td.appendChild(
+                    TextCr("button",{"id":_data.sn,"value":"金流結帳" },{"click":function(e){
 
-            if(System.session[System.now_page]=="sold")
+                        var _data;
+                        for(var k in r)
+                        {
+                            if(r[k].sn==this.id)
+                            {
+                                _data = r[k];
+                                var sn = new Date().getTime().toString().substr(2);
+                                _data.sn = sn;
+                                _data.id = sn;
+                                DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]+"/"+this.id).remove();
+
+                                DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]+"/"+sn).set(_data);
+                            }
+                        }
+
+                        _data.product_word = "";
+                        for(var p_id in _data.product)
+                        {
+                            if(_data.product[p_id].product_status=="ok")
+                            _data.product_word += "#"+_data.product[p_id].name + " 數量： " + _data.product[p_id].count;
+                        }
+
+
+                        ECPapi(_data);
+                        
+                        MenuClick(System.now_page,"open");
+                    }})
+                );
+                tr.appendChild(td);
+            }
+            else if(System.session[System.now_page]=="sold")
             {
                 td = document.createElement("td");
                 td.appendChild(
@@ -1405,6 +1438,14 @@ function Order()
 
 
     System.MainDiv.appendChild( tmp );
+    MainDivSetTimeout();
+}
+
+
+function PaymentFlow()
+{
+    
+    System.MainDiv.appendChild( ECPapi() );
     MainDivSetTimeout();
 }
 
@@ -1907,6 +1948,7 @@ function _ShopFunc(config)
             {
                 var _order = {};
                 var sold = {};
+                var sn;
 
                 _order.time = System.ServerTime;
                 _order.time_end = System.ServerTime;
@@ -1943,8 +1985,9 @@ function _ShopFunc(config)
                 }
 
                 
+                sn = new Date().getTime().toString().substr(2);
 
-                DBGetId(DB,"order/"+System.gapi.currentUser.get().Aa+"/buy/",function(sn){
+                //DBGetId(DB,"order/"+System.gapi.currentUser.get().Aa+"/buy/",function(sn){
 
                     DB.ref("order/"+System.gapi.currentUser.get().Aa+"/buy/"+sn).set(
                         _order
@@ -1963,6 +2006,9 @@ function _ShopFunc(config)
                             sold_order.product[p_id].price*sold_order.product[p_id].count;
                         }
     
+
+                        //sn = new Date().getTime().toString().substr(2);
+                        
                         DBGetId(DB,"order/"+sold_id+"/sold/",function(sn){
     
                             DB.ref("order/"+sold_id+"/sold/"+sn).set(
@@ -1971,7 +2017,7 @@ function _ShopFunc(config)
     
                         });
                     }
-                });
+                //});
                 
 
                 
@@ -2123,25 +2169,33 @@ function GetYtCommentThreads(VideoId,_func)
 }
 
 
-
-function ECPapi()
+var ApiRow = {};
+function ECPapi(order)
 {
-    var TradeNo = "s"+System.time
+    var TradeNo = order.sn;//"s"+System.time
     var TradeDate = DateFormat(new Date(System.time));
     
-    var ApiRow = {
+    ApiRow = {
         "MerchantID":"2000132",
         "MerchantTradeNo":TradeNo,//定單編號 不可重覆
         "MerchantTradeDate":TradeDate,//2012/03/21 15:40:18
         "PaymentType":"aio",
-        "TotalAmount":"50",//金額
-        "TradeDesc":"TradeDesc",
-        "ItemName":"ItemName",
+        "TotalAmount":order.total_price,//金額
+        "TradeDesc":"交易敘述",//交易敘述
+        "ItemName":order.product_word,
         "ReturnURL":"https://shen-work.github.io/demo/ecp.html",//收到 Server 端付款結果通知後，請正確回應 1|OK。
         "ChoosePayment":"ALL",//
         "CheckMacValue":"",//sha256加密
         "EncryptType":"1"
+    };
+
+    
+    var PrintRow = {
+        //"ItemName":"商品名稱",
+        //"TotalAmount":"商品價錢"
     }
+    
+
     var HashKey = "5294y06JbISpM5x9";
     var HashIV = "v77hoKGq4kWxNNIS";
 
@@ -2164,25 +2218,60 @@ function ECPapi()
     ApiRow.CheckMacValue = sha256(NetUrlEncode(encodeURIComponent(ApiRow.CheckMacValue)).toLowerCase()).toUpperCase();
 
     
-    
-    
 
     var form = document.createElement("form");
     form.action = "https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5";
     form.enctype = "application/x-www-form-urlencoded";
     form.method = "POST";
+    form.target = "_blank";
 
     for(var k in ApiRow)
     {
-        form.appendChild( SpanCr(k) );
-        form.appendChild( TextCr("text",{"name":k,"value":ApiRow[k]}) );
+        if(PrintRow[k]!=undefined)
+        {
+            form.appendChild( SpanCr(PrintRow[k]) );
+            form.appendChild( TextCr("text",{"name":k,"value":ApiRow[k]},{"change":function(){
+                ApiRow[this.name] = this.value;
+            }}) );
+        }
+        else
+        {
+            form.appendChild( TextCr("hidden",{"name":k,"value":ApiRow[k]}) );
+        }
         form.appendChild( document.createElement("p") );
     }
 
-    form.appendChild( TextCr("submit",{"value":"SUBMIT"}));
+    form.appendChild( TextCr("button",{"value":"送出定單"},{"click":function(){
+
+        ApiRow.CheckMacValue = 
+        "HashKey="+HashKey+
+        "&ChoosePayment="+ApiRow.ChoosePayment+
+        "&EncryptType="+ApiRow.EncryptType+
+        "&ItemName="+ApiRow.ItemName+
+        "&MerchantID="+ApiRow.MerchantID+
+        "&MerchantTradeDate="+TradeDate+
+        "&MerchantTradeNo="+TradeNo+
+        "&PaymentType="+ApiRow.PaymentType+
+        "&ReturnURL="+ApiRow.ReturnURL+
+        "&TotalAmount="+ApiRow.TotalAmount+
+        "&TradeDesc="+ApiRow.TradeDesc+
+        "&HashIV="+HashIV;
+        
+        
+        ApiRow.CheckMacValue = sha256(NetUrlEncode(encodeURIComponent(ApiRow.CheckMacValue)).toLowerCase()).toUpperCase();
+
+        form.querySelector("[name=CheckMacValue]").value = ApiRow.CheckMacValue;
 
 
-    return form;
+        form.submit();
+    }}));
+
+    System.MainDiv.appendChild( form );
+
+    form.submit();
+    form.remove();
+    
+    //return form;
 }
 
 
