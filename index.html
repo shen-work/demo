@@ -10,7 +10,129 @@
 <script src="https://apis.google.com/js/platform.js" async defer></script>
 <script src="https://www.gstatic.com/firebasejs/5.5.6/firebase.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://unpkg.com/vue@next"></script>
 <script src="script.js"></script>
+
+
+
+
+<!--
+<div id="VueStock">
+
+<table_component></table_component>
+
+</div>
+
+
+
+<script>
+var DB = firebase;
+DB.initializeApp({databaseURL: "https://shen-member-default-rtdb.firebaseio.com/"});
+
+DB = DB.database();
+
+
+var System = {};
+System.gapi = {};
+    System.gapi.isSignedIn = {"get":function(){return true;}};
+    System.gapi.currentUser = {"get":function(){
+        return {
+            "Aa":"117851722309842781944",
+            "gt":JSON.parse("{\"GS\":\"117851722309842781944\",\"Te\":\"黃仕軒\",\"rU\":\"仕軒\",\"mS\":\"黃\",\"zJ\":\"https://lh3.googleusercontent.com/a/AATXAJyhVEEcd8ALJo3jugjlpz_GMQS5a0clatX0F6yn=s96-c\",\"Rt\":\"shen103227@gmail.com\"}"),
+            "getId":function(){ return "117851722309842781944"; }
+        };
+    }};
+
+
+
+
+
+    var new_btn = document.createElement("input");
+    new_btn.type = "button";
+    new_btn.value = "新增商品";
+
+
+    var table,tr,td;
+
+    table = document.createElement("table");
+    table.className = "ListTable";
+
+
+    /*
+    tr = document.createElement("tr");
+
+    td = document.createElement("td");
+    td.setAttribute("v-for","(data,idx) in title");
+
+    td.innerHTML = `{{data}}`;
+
+    tr.appendChild(td);
+
+    table.appendChild(tr);
+    */
+
+
+    DB.ref("product").orderByChild("user/GS").equalTo(System.gapi.currentUser.get().getId()).once("value",r=>{
+
+        r = r.val();
+        var list = {};
+
+        for(var id in r)
+        {
+            list[id] = r[id];
+        }
+
+
+
+        var title = JSON.parse(JSON.stringify(
+            
+            {
+                "name":"商品名稱",
+                "count":"數量",
+                "price":"價錢",
+                "on":"上/下架"
+            }
+
+        ));
+        title[ "menu" ] = "管理";
+
+        VueApp = Vue.createApp( 
+            {
+                data(){
+                    return {
+                        "title":title,
+                        "list":list
+                    }
+                }
+            }
+        );
+
+        
+        VueApp.component("table_component",{
+            data(){
+                return {
+                    "title":title,
+                    "list":list
+                }
+            },
+            template:`<table>
+            <tr v-for="(data,idx) in list">
+            <td>{{data.name}}</td>
+            <td>{{data.count}}</td>
+            <td>{{data.price}}</td>
+            <td>{{data.on=='on'?"上架":"下架"}}</td>
+            <td>管理</td>
+            </tr>
+            </table>`
+        });
+
+        VueApp.mount("#VueStock");
+
+    });
+
+
+
+</script>
 
 
 

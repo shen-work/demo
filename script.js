@@ -7,6 +7,8 @@
 var DB = firebase;
 DB.initializeApp({databaseURL: "https://shen-member-default-rtdb.firebaseio.com/"});
 
+var VueApp;
+
 var System = {
     "menu":{
         "Test":{"name":"測試系統"},
@@ -16,8 +18,9 @@ var System = {
         "Shop":{"name":"購買商品功能"},
         "Car":{"name":"購物車功能"},
         "Stock":{"name":"庫存管理"},
+        "VueStock":{"name":"庫存管理(vue.js)"},
         "Order":{"name":"定單管理"},
-        "PaymentFlow":{"name":"金流串接"}
+        "VueMenu":{"name":"vue.js"}
     },
     "now_page":"",
     "ServerTime":firebase.database.ServerValue.TIMESTAMP,
@@ -996,7 +999,6 @@ function Stock()
 
         if(config.mode=="remove")
         {
-            
             DB.ref("product/"+config.id).remove();
             word = "刪除完成";
         }
@@ -1443,12 +1445,395 @@ function Order()
 }
 
 
+
+
+
 function PaymentFlow()
 {
     
     System.MainDiv.appendChild( ECPapi() );
     MainDivSetTimeout();
 }
+
+
+function VueStock()
+{
+    DB.ref("product").orderByChild("user/GS").equalTo(System.gapi.currentUser.get().getId()).once("value",r=>{
+
+        r = r.val();
+        var list = {};
+
+        for(var id in r)
+        {
+            list[id] = r[id];
+        }
+
+
+        var title = JSON.parse(JSON.stringify(System.product));
+        title[ "menu" ] = "管理";
+
+        VueApp = Vue.createApp( 
+            {
+                data(){
+                    return {
+                        "title":title,
+                        "list":list
+                    }
+                }
+            }
+        );
+
+        var methods_list = {
+            New(e){
+                var tmp = document.createDocumentFragment();
+
+                var table = this.Detail();
+                tmp.appendChild( table );
+
+                var Submit_func = this.Submit;
+
+                tmp.appendChild(
+                    TextCr("button",{"id":e.target.id,"value":"送出"},{"click":function(e){
+                        Submit_func(table,{"mode":"push"},e);
+                    }}) 
+                );
+
+                System.MainDiv.appendChild( OpenWindow(tmp,{"id":"new_product","close":true,"xy":{
+                    "x":e.clientX,
+                    "y":e.clientY
+                }}) );
+            },
+            Menu(e){
+
+                var tmp = document.createDocumentFragment();
+
+                var table = this.Detail( list[e.target.id] );
+                tmp.appendChild( table );
+
+                var Submit_func = this.Submit;
+
+                tmp.appendChild(
+                    TextCr("button",{"id":e.target.id,"value":"修改"},{"click":function(e){
+                        Submit_func(table,{"mode":"update","id":this.id},e);
+                    }}) 
+                );
+
+                System.MainDiv.appendChild( OpenWindow(tmp,{"id":"new_product","close":true,"xy":{
+                    "x":e.clientX,
+                    "y":e.clientY
+                }}) );
+            },
+            Del(e){
+
+                var msg = document.createElement("div");
+                msg.innerHTML = "確定要刪除該商品嗎";
+
+                msg.appendChild( 
+                    document.createElement("br")
+                );
+
+                var Submit_func = this.Submit;
+
+                msg.appendChild(
+                    TextCr("button",{"id":e.target.id,"value":"確定","xy":{"x":e.clientX,"y":e.clientY}},{"click":function(e){
+
+                        Submit_func( msg ,{"mode":"remove","id":this.id},e);
+
+                    }}) 
+                );
+
+                msg.appendChild(
+                    TextCr("button",{"id":this.id,"value":"取消","xy":{"x":e.clientX,"y":e.clientY}},{"click":function(){
+                        msg.parentElement.remove();
+                    }}) 
+                );
+
+                System.MainDiv.appendChild( OpenWindow(msg,{"id":"Confirm","xy":{"x":e.clientX,"y":e.clientY}}) );
+
+            },
+            Submit(table,config,e){
+
+                if(System.gapi.isSignedIn.get()!=true)
+                {
+                    var msg = document.createElement("div");
+                    msg.innerHTML = "請先登入帳號";
+                    System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"xy":{"x":e.clientX,"y":e.clientY}}) );
+                    return;
+                }
+
+                var input = table.querySelectorAll("input:not([type=button])");
+
+                var _data = {};
+
+                for(var i=0;i<input.length;i++)
+                {
+                    if(input[i].value=="")
+                    {
+                        var msg = document.createElement("div");
+                        msg.innerHTML = "欄位不可空白";
+                        System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"xy":{"x":e.clientX,"y":e.clientY}}) );
+                        return;
+                    }
+
+                    if(input[i].id=="on")
+                    {
+                        if( input[i].checked==true )
+                        _data[ input[i].id ] = input[i].value;
+                    }
+                    else
+                    {
+                        _data[ input[i].id ] = input[i].value;
+                    }
+                }
+
+                _data.time = System.ServerTime;
+                _data.user = System.gapi.currentUser.get().gt;
+                
+                if(config.id!==undefined)
+                VueApp.$data.list[config.id] = _data;
+
+
+                if(config.mode=="push")
+                {
+                    DB.ref("product").push(_data).then(function(r){
+
+                        VueApp.$data.list[r.key] = _data;
+                        MainDivSetTimeout();
+                    });
+                }
+
+                if(config.mode=="update")
+                {
+                    DB.ref("product/"+config.id).update(_data);
+                }
+
+                if(config.mode=="remove")
+                {
+                    DB.ref("product/"+config.id).remove();
+
+                    delete VueApp.$data.list[config.id];
+                }
+
+                
+                
+                table.parentElement.remove();
+
+
+                MainDivSetTimeout();
+                return;
+
+
+
+            },
+            Detail(data = {})
+            {
+                var table = document.createElement("table");
+                table.className = "ListTable";
+
+                for(var k in System.product)
+                {        
+                    var tr = document.createElement("tr");
+
+                    var td = document.createElement("td");
+                    td.innerHTML = System.product[k];
+                    tr.appendChild(td);
+
+                    td = document.createElement("td");
+                    var obj = TextCr("text",{"id":k,"value":data[k]||""});
+                    if(k!="name")
+                    {
+                        obj = TextCr("number",{"id":k,"value":data[k]||"0"});
+                    }
+
+                    if(k=="on") 
+                    {
+                        obj = document.createDocumentFragment();
+                        obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"on"}) );
+                        obj.appendChild( SpanCr("上架") );
+                        obj.appendChild( TextCr("radio",{"name":k,"id":k,"value":"off"}) );
+                        obj.appendChild( SpanCr("下架") );
+                    }
+                    td.appendChild( obj );
+                    
+                    tr.appendChild(td);
+
+                    table.appendChild(tr);
+                }
+                
+                table.querySelector("[name='on'][value='"+(data.on||"off")+"']").checked = true
+
+                return table;
+            }
+        }
+
+        
+        VueApp.component("table_component",{
+            data(){
+                return {
+                    "title":title,
+                    "list":list
+                }
+            },
+            methods:methods_list,
+            template:`<table class="ListTable">
+            <tr>
+            <td v-for="(data,idx) in title">{{data}}</td>
+            </tr>
+
+            <tr v-for="(data,idx) in list">
+            <td>{{data.name}}</td>
+            <td>{{data.count}}</td>
+            <td>{{data.price}}</td>
+            <td>{{data.on=='on'?"上架":"下架"}}</td>
+            <td>
+            <input type="button" value="管理" :id="idx" v-on:click="Menu($event)">
+            <input type="button" value="刪除" :id="idx" v-on:click="Del($event)">
+            </td>
+            </tr>
+            </table>`
+        });
+
+
+
+        VueApp.component("btn_component",{
+            data(){
+                return {
+                    "title":title,
+                    "list":list
+                }
+            },
+            methods:methods_list,
+            template:`<input type="button" value="新增商品" @click="New($event)">`
+        });
+
+
+        VueApp = VueApp.mount("#Main");
+
+        MainDivSetTimeout();
+    });
+
+
+    System.MainDiv.appendChild( document.createElement("btn_component") );    
+    System.MainDiv.appendChild( document.createElement("table_component") );
+
+    MainDivSetTimeout();
+}
+
+
+
+
+function VueMenu()
+{
+    var vue_div = document.createElement("div");
+    vue_div.id = "v_div";
+    
+    var btn = document.createElement("input");
+    btn.type = "button";
+    
+    btn.setAttribute("v-on:click.once","click('click',$event)");
+    btn.setAttribute("v-bind:value","btn.value");
+    btn.setAttribute("v-bind:class","{VueStyle:true,Style2:control.style2}");
+
+
+    var text = document.createElement("input");
+    text.type = "text";
+
+
+    text.setAttribute("v-bind:value","check");
+    text.setAttribute("v-if","control.display");
+    text.setAttribute("v-on:focus","focus");
+
+
+
+
+    var if_btn = document.createElement("input");
+    if_btn.type = "button";
+    if_btn.value = "if";
+    if_btn.setAttribute("v-if","control.if");
+
+    var else_btn = document.createElement("input");
+    else_btn.type = "button";
+    else_btn.value = "else";
+    else_btn.setAttribute("v-else","");
+
+    var for_div = document.createElement("div");
+    for_div.setAttribute("v-for","(data,idx) in list");
+    for_div.setAttribute("v-bind:id","idx");
+    for_div.innerHTML = "{{idx}} => {{data.content}}";
+
+
+
+    vue_div.innerHTML = "{{false ? $data.btn.value:`test`}}";
+    vue_div.innerHTML = "{{true ? $data.btn.value:`test`}}";
+    vue_div.appendChild(btn);
+    vue_div.appendChild(text);
+
+    vue_div.appendChild(if_btn);
+    vue_div.appendChild(else_btn);
+
+    vue_div.appendChild(for_div);
+
+
+
+
+    System.MainDiv.appendChild( vue_div );
+    MainDivSetTimeout();
+
+    VueApp = Vue.createApp({
+        data() {
+          return {
+              "btn":{
+                  "value":"CLICK"
+              },
+              "text":{
+                  "value":"text"
+              },
+              "list":{
+                "a":{"content":"內容A","id":"a_0"},
+                "b":{"content":"內容B","id":"b_1"},
+                "c":{"content":"內容C","id":"c_2"},
+              },
+              "control":{
+                  "display":true,
+                  "style2":false,
+                  "if":true
+              }
+          }
+        },
+        computed:{
+            check(){
+                return this.$data.text.value
+            }
+        },
+        watch:{
+
+        },
+        methods:{
+            click(act,e){
+                console.log(act);
+                console.log(e);
+                console.log(this.$data);
+            },
+            focus(e){
+                console.log(e);
+                console.log(this);
+            }
+        }
+      });
+
+      VueApp = VueApp.mount('#v_div');
+
+      
+
+
+
+}
+
+
+
+
+
+/*===================================*/
 
 function MainDivSetTimeout()
 {
@@ -1467,8 +1852,6 @@ function MainDivSetTimeout()
         
     },0);
 }
-
-
 
 function ListDiv(list,_class)
 {

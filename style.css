@@ -261,3 +261,12 @@ div.detail{
 
 
 
+input.VueStyle{
+    background: #f00;
+}
+
+input.VueStyle.Style2{
+    color: #00f;
+    font-size: larger;
+}
+
