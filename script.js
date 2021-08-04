@@ -304,12 +304,12 @@ function Member()
             "email":{
                 "span":"GOOGLE帳號",
                 "disabled":"disabled",
-                "value":gt.getEmail()
+                "value":gt.Rt
             },
             "name":{
                 "span":"GOOGLE暱稱",
                 "disabled":"disabled",
-                "value":gt.getName()
+                "value":gt.rU
             }
         };
         login_word = "登出網站";
