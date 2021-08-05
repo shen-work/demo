@@ -833,7 +833,7 @@ function Shop()
 
 function Car()
 {
-    DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
+    DB.ref("member/"+System.gapi.currentUser.get().getId()+"/shop/").once("value",shop=>{
 
         shop = shop.val()||{};
         
@@ -982,7 +982,7 @@ function Stock()
         }
 
         _data.time = System.ServerTime;
-        _data.user = System.gapi.currentUser.get().gt;
+        _data.user = System.gapi.currentUser.get().getId();
         
         var word;
         if(config.mode=="push")
@@ -1239,7 +1239,7 @@ function Order()
     table.appendChild(tr);
     
 
-    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]).orderByKey().once("value",r=>{
+    DB.ref("order/"+System.gapi.currentUser.get().getId()+"/"+System.session[System.now_page]).orderByKey().once("value",r=>{
 
         r = r.val();
 
@@ -1344,9 +1344,9 @@ function Order()
                                 var sn = new Date().getTime().toString().substr(2);
                                 _data.sn = sn;
                                 _data.id = sn;
-                                DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]+"/"+this.id).remove();
+                                DB.ref("order/"+System.gapi.currentUser.get().getId()+"/"+System.session[System.now_page]+"/"+this.id).remove();
 
-                                DB.ref("order/"+System.gapi.currentUser.get().Aa+"/"+System.session[System.now_page]+"/"+sn).set(_data);
+                                DB.ref("order/"+System.gapi.currentUser.get().getId()+"/"+System.session[System.now_page]+"/"+sn).set(_data);
                             }
                         }
 
@@ -1396,7 +1396,7 @@ function Order()
                                 var upd = _order;
                                 upd.order_status = select.value;
                                 upd.time_end = System.ServerTime;
-                                DB.ref("order/"+System.gapi.currentUser.get().Aa+"/sold/"+_order.sn).update(upd);
+                                DB.ref("order/"+System.gapi.currentUser.get().getId()+"/sold/"+_order.sn).update(upd);
 
                                 DB.ref("order/"+_order.buy.GS+"/buy/"+_order.buy_sn).once("value",_buy=>{
                                     _buy = _buy.val();
@@ -1587,7 +1587,7 @@ function VueStock()
                 }
 
                 _data.time = System.ServerTime;
-                _data.user = System.gapi.currentUser.get().gt;
+                _data.user = System.gapi.currentUser.get().getId();//System.gapi.currentUser.get().gt;
                 
                 if(config.id!==undefined)
                 VueApp.$data.list[config.id] = _data;
@@ -1595,6 +1595,8 @@ function VueStock()
 
                 if(config.mode=="push")
                 {
+
+
                     DB.ref("product").push(_data).then(function(r){
 
                         VueApp.$data.list[r.key] = _data;
@@ -2324,7 +2326,7 @@ function _ShopFunc(config)
     DB.ref("product/"+config.id).once("value",r=>{
         r = r.val();
 
-        DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").once("value",shop=>{
+        DB.ref("member/"+System.gapi.currentUser.get().getId()+"/shop/").once("value",shop=>{
 
             shop = shop.val()||{};
             
@@ -2373,14 +2375,14 @@ function _ShopFunc(config)
 
                 //DBGetId(DB,"order/"+System.gapi.currentUser.get().Aa+"/buy/",function(sn){
 
-                    DB.ref("order/"+System.gapi.currentUser.get().Aa+"/buy/"+sn).set(
+                    DB.ref("order/"+System.gapi.currentUser.get().getId()+"/buy/"+sn).set(
                         _order
                     );
 
                     for(var sold_id in sold)
                     {
                         var sold_order = sold[sold_id];
-                        sold_order.buy = System.gapi.currentUser.get().gt;
+                        sold_order.buy = System.gapi.currentUser.get().getId();
                         sold_order.total_price = 0;
                         sold_order.order_status = 0;
                         sold_order.buy_sn = sn;
@@ -2406,7 +2408,7 @@ function _ShopFunc(config)
 
                 
 
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/").remove();
+                DB.ref("member/"+System.gapi.currentUser.get().getId()+"/shop/").remove();
 
                 var msg = document.createElement("div");
                 msg.innerHTML = "結帳成功，請至定單管理確認結果";
@@ -2429,14 +2431,14 @@ function _ShopFunc(config)
                     _data = shop[config.id];
                     _data.count-=-1*config.count;
                 }
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
+                DB.ref("member/"+System.gapi.currentUser.get().getId()+"/shop/"+config.id).update(_data);
 
                 shop[config.id] = _data;
             }
             if(config.mode=="count")
             {
                 _data.count=config.count;
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).update(_data);
+                DB.ref("member/"+System.gapi.currentUser.get().getId()+"/shop/"+config.id).update(_data);
 
                 shop[config.id] = _data;
             }
@@ -2445,7 +2447,7 @@ function _ShopFunc(config)
             if(config.mode=="remove")
             {
                 delete shop[config.id];
-                DB.ref("member/"+System.gapi.currentUser.get().Aa+"/shop/"+config.id).remove();
+                DB.ref("member/"+System.gapi.currentUser.get().getId()+"/shop/"+config.id).remove();
             }
             MenuClick("Car","open");
             return;
