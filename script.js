@@ -1103,7 +1103,7 @@ function Stock()
                 tr.appendChild(td);
                 table.appendChild(tr);
 
-                DB.ref("product").orderByChild("user/GS").equalTo(System.gapi.currentUser.get().getId()).once("value",r=>{
+                DB.ref("product").orderByChild("user").equalTo(System.gapi.currentUser.get().getId()).once("value",r=>{
 
                     r = r.val();
 
@@ -1458,7 +1458,7 @@ function PaymentFlow()
 
 function VueStock()
 {
-    DB.ref("product").orderByChild("user/GS").equalTo(System.gapi.currentUser.get().getId()).once("value",r=>{
+    DB.ref("product").orderByChild("user").equalTo(System.gapi.currentUser.get().getId()).once("value",r=>{
 
         r = r.val();
         var list = {};
