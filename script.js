@@ -86,7 +86,7 @@ window.onload = function()
     System.gapi.currentUser = {"get":function(){
         return {
             "Aa":"117851722309842781944",
-            "gt":JSON.parse("{\"GS\":\"117851722309842781944\",\"Te\":\"黃仕軒\",\"rU\":\"仕軒\",\"mS\":\"黃\",\"zJ\":\"https://lh3.googleusercontent.com/a/AATXAJyhVEEcd8ALJo3jugjlpz_GMQS5a0clatX0F6yn=s96-c\",\"Rt\":\"shen103227@gmail.com\"}"),
+            "Ts":JSON.parse("{\"GS\":\"117851722309842781944\",\"Te\":\"黃仕軒\",\"Et\":\"仕軒\",\"mS\":\"黃\",\"zJ\":\"https://lh3.googleusercontent.com/a/AATXAJyhVEEcd8ALJo3jugjlpz_GMQS5a0clatX0F6yn=s96-c\",\"RT\":\"shen103227@gmail.com\"}"),
             "getId":function(){ return "117851722309842781944"; }
         };
     }};
@@ -299,17 +299,17 @@ function Member()
 
     if(System.gapi.isSignedIn.get()==true)
     {
-        var gt = System.gapi.currentUser.get().gt;
+        var Ts = System.gapi.currentUser.get().Ts;
         menu = {
             "email":{
                 "span":"GOOGLE帳號",
                 "disabled":"disabled",
-                "value":gt.Rt
+                "value":Ts.RT
             },
             "name":{
                 "span":"GOOGLE暱稱",
                 "disabled":"disabled",
-                "value":gt.rU
+                "value":Ts.Et
             }
         };
         login_word = "登出網站";
