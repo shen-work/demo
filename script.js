@@ -2080,14 +2080,7 @@ function PIXI_func()
             count.x = 0;
             count.ms++;
 
-            var x = Math.floor(Math.random()*app.view.width);
-            var y = Math.floor(Math.random()*app.view.height);
             
-            if( !PIXI_obj.HitCheck({"x":x,"y":y},PIXI_obj.heart) && 
-                !PIXI_obj.HitCheck({"x":x,"y":y},TRDLMenu) )
-            {
-                PIXI_obj.EnemySet(x,y);
-            }
 
         }
 
@@ -2096,7 +2089,14 @@ function PIXI_func()
             count.ms = 0;
             count.s++;
 
+            var x = Math.floor(Math.random()*app.view.width);
+            var y = Math.floor(Math.random()*app.view.height);
             
+            if( !PIXI_obj.HitCheck({"x":x,"y":y},PIXI_obj.heart) && 
+                !PIXI_obj.HitCheck({"x":x,"y":y},TRDLMenu) )
+            {
+                PIXI_obj.EnemySet(x,y);
+            }
 
         }
         if(count.s>=60)
