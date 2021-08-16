@@ -352,20 +352,18 @@ function Member()
                 alert("localhost false");
                 return;
             }
-            console.log(r);
-            console.log(r.Aa);
 
-            DB.ref("member/"+r.Aa).once("value",function(member){
+            DB.ref("member/"+System.gapi.currentUser.get().getId()).once("value",function(member){
 
                 if(member.val()==null)
                 {
-                    var _data = JSON.parse(JSON.stringify(r.gt));
+                    var _data = JSON.parse(JSON.stringify(System.gapi.currentUser.get().getBasicProfile()));
 
                     for(var k in _data)
                     if(_data[k]===undefined) delete _data[k];
 
 
-                    DB.ref("member/"+r.Aa).set(_data);
+                    DB.ref("member/"+System.gapi.currentUser.get().getId()).set(_data);
                 }
 
             });
