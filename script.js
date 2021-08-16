@@ -352,6 +352,8 @@ function Member()
                 alert("localhost false");
                 return;
             }
+            console.log(r);
+            console.log(r.Aa);
 
             DB.ref("member/"+r.Aa).once("value",function(member){
 
