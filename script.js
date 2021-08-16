@@ -20,7 +20,8 @@ var System = {
         "Stock":{"name":"庫存管理"},
         "VueStock":{"name":"庫存管理(vue.js)"},
         "Order":{"name":"定單管理"},
-        "VueMenu":{"name":"vue.js"}
+        //"VueMenu":{"name":"vue.js"},
+        "PIXI_func":{"name":"PIXI測試"}
     },
     "now_page":"",
     "ServerTime":firebase.database.ServerValue.TIMESTAMP,
@@ -87,7 +88,17 @@ window.onload = function()
         return {
             "Aa":"117851722309842781944",
             "Ts":JSON.parse("{\"GS\":\"117851722309842781944\",\"Te\":\"黃仕軒\",\"Et\":\"仕軒\",\"mS\":\"黃\",\"zJ\":\"https://lh3.googleusercontent.com/a/AATXAJyhVEEcd8ALJo3jugjlpz_GMQS5a0clatX0F6yn=s96-c\",\"RT\":\"shen103227@gmail.com\"}"),
-            "getId":function(){ return "117851722309842781944"; }
+            "getId":function(){ return "117851722309842781944"; },
+            getBasicProfile(){
+                return {
+                    getName(){
+                        return "黃仕軒"
+                    },
+                    getEmail(){
+                        return "shen103227@gmail.com"
+                    }
+                }
+            }
         };
     }};
 
@@ -200,6 +211,7 @@ function MenuLi()
 
 function MenuClick(id,act)
 {
+
     System.now_page = id;
 
     System.session.menu = System.session.menu||{};
@@ -299,17 +311,17 @@ function Member()
 
     if(System.gapi.isSignedIn.get()==true)
     {
-        var Ts = System.gapi.currentUser.get().Ts;
+        var profile = System.gapi.currentUser.get().getBasicProfile();
         menu = {
             "email":{
                 "span":"GOOGLE帳號",
                 "disabled":"disabled",
-                "value":Ts.RT
+                "value":profile.getEmail()
             },
             "name":{
                 "span":"GOOGLE暱稱",
                 "disabled":"disabled",
-                "value":Ts.Et
+                "value":profile.getName()
             }
         };
         login_word = "登出網站";
@@ -677,14 +689,14 @@ function Chat()
         "SendBtn":{
             "html":TextCr("button",{"value":"發言"},{"click":function(){
 
-                if( System.gapi._loginstatus!==true )
+                if(System.gapi.isSignedIn.get()!=true)
                 {
                     var msg = document.createElement("div");
-                    msg.innerHTML = `請先登入帳號才可進行發言`;
-                    
-                    System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true}) );
+                    msg.innerHTML = "請先登入帳號";
+                    System.MainDiv.appendChild( OpenWindow(msg,{"id":"Alert","close":true,"xy":{"x":e.clientX,"y":e.clientY}}) );
                     return;
                 }
+
 
 
                 var word = document.querySelector("#SendText").value;
@@ -693,8 +705,8 @@ function Chat()
 
                 _data.word = word;
                 _data.time = System.ServerTime;
-                _data.member_id = System.gapi._user.GS;
-                _data.name = System.gapi._user.getName();
+                _data.member_id = System.gapi.currentUser.get().getId();
+                _data.name = System.gapi.currentUser.get().getBasicProfile().getName()
 
                 DB.ref("chat").push( _data );
 
@@ -1825,10 +1837,595 @@ function VueMenu()
 
       VueApp = VueApp.mount('#v_div');
 
-      
+}
 
 
 
+var PIXI_obj = {};
+function PIXI_func()
+{
+    MainDivSetTimeout();
+
+    if(PIXI_obj.app) PIXI_obj.app.destroy();
+    
+
+    const app = new PIXI.Application({
+        width: document.querySelector("#Main").clientWidth - 100,
+        height:400,
+        
+        backgroundColor: 0x222222
+    });
+    
+    const container = new PIXI.Container();
+    const loader = new PIXI.Loader();
+
+    PIXI_obj.app = app;
+    PIXI_obj.container = container;
+    PIXI_obj.loader = loader;
+
+    PIXI_obj.move_speed = 1;
+    PIXI_obj.KeyEvent = function(e){
+
+        if(e.key.indexOf("Arrow")===0)
+        {
+            BunnyMove(e);
+
+            e.preventDefault();
+        }
+    };
+
+    function BunnyMove(e)
+    {
+        var move = e.key||e.target.name;
+        var type = e.type;
+
+
+        if(type.indexOf("down")!==-1)
+        {
+            PIXI_obj.move_speed+=1;
+            PIXI_obj.TRDLbtn[ move ].obj.tint = 0xff0000;
+        }
+
+        if(type.indexOf("up")!==-1)
+        {
+            PIXI_obj.move_speed = 1;
+            PIXI_obj.TRDLbtn[ move ].obj.tint = 0xffffff;
+        }
+
+
+        PIXI_obj.move = PIXI_obj.move||{
+            "ArrowUp":false,
+            "ArrowRight":false,
+            "ArrowDown":false,
+            "ArrowLeft":false
+        };
+
+        PIXI_obj.move[move] = (type.indexOf("down")!==-1)?true:false;
+    }
+
+
+    PIXI_obj.Resize = (e)=>{
+        app.renderer.view.width = document.querySelector("#Main").clientWidth - 100;
+    };
+
+    
+    window.removeEventListener("keydown",PIXI_obj.KeyEvent);
+    window.removeEventListener("keyup",PIXI_obj.KeyEvent);
+    window.onkeydown = PIXI_obj.KeyEvent;
+    window.onkeyup = PIXI_obj.KeyEvent;
+
+    window.removeEventListener("resize",PIXI_obj.Resize);
+    window.onresize = PIXI_obj.Resize;
+    
+
+    
+
+
+    
+    var TRDLMenu = new PIXI.Container();
+    TRDLMenu.x = 5;
+    TRDLMenu.y = 30;
+    TRDLMenu.interactive = true;
+    
+    var border = new PIXI.Graphics();
+    border.beginFill(0x0000aa,1);
+    border.lineStyle(1,0x000000,1);
+    border.x = 0;
+    border.y = 0;
+    border.drawRect(0, 0, 170, 160);
+    border.endFill();
+    TRDLMenu.addChild(border);
+
+    PIXI_obj.border = border;
+    PIXI_obj.TRDLMenu = TRDLMenu;
+    
+
+    var TRDLbtn = {
+        "ArrowUp":{
+            "x":50,
+            "y":10,
+            "line":[0, 30,30, 0,60, 30]
+        },
+        "ArrowRight":{
+            "x":90,
+            "y":50,
+            "line":[30, 0,60,30,30, 60]
+        },
+        "ArrowDown":{
+            "x":50,
+            "y":90,
+            "line":[0, 30,60, 30,30, 60]
+        },
+        "ArrowLeft":{
+            "x":10,
+            "y":50,
+            "line":[0, 30,30,0,30, 60]
+        },
+    }
+
+
+
+    for(var key in TRDLbtn)
+    {
+        TRDLbtn[key].obj = new PIXI.Graphics();
+    
+        TRDLbtn[key].obj.beginFill(0xaaaaaa,1);
+        TRDLbtn[key].obj.lineStyle(2,0x000000,1);
+        TRDLbtn[key].obj.x = TRDLbtn[key].x;
+        TRDLbtn[key].obj.y = TRDLbtn[key].y;
+        TRDLbtn[key].obj.drawPolygon( TRDLbtn[key].line );
+        TRDLbtn[key].obj.endFill();
+        
+        TRDLbtn[key].obj.interactive = true;
+        TRDLbtn[key].obj.cursor = "pointer";
+        TRDLbtn[key].obj.name = key;
+        
+    
+        TRDLbtn[key].obj.on("mouseover",(e)=>{
+    
+            e.currentTarget.tint = 0xff0000;
+        });
+    
+        TRDLbtn[key].obj.on("mouseout",(e)=>{
+            
+            e.currentTarget.tint = 0xFFFFFF;
+        });
+    
+    
+        TRDLbtn[key].obj.on("mousedown",BunnyMove);
+        TRDLbtn[key].obj.on("mouseup",BunnyMove);
+        
+    
+        TRDLMenu.addChild( TRDLbtn[key].obj );
+    }
+
+
+    PIXI_obj.TRDLbtn = TRDLbtn;
+
+    PIXI_obj.EnemyList = [];
+    PIXI_obj.PixiTimer = {
+        "count":
+        {
+            "x":0,
+            "ms":0,
+            "s":0,
+            "m":0,
+            "h":0
+        }
+    };
+    
+   
+    var PixiTimer = PIXI_obj.PixiTimer;
+    
+    var style = {"fill":"#f00"};
+    for(var i=0;i<=59;i++)
+    {
+        PixiTimer["ms"] = PixiTimer["ms"]||{};
+        PixiTimer["s"] = PixiTimer["s"]||{};
+        PixiTimer["m"] = PixiTimer["m"]||{};
+        PixiTimer["h"] = PixiTimer["h"]||{};
+        
+
+        PixiTimer["ms"][ Str(i,2) ] = new PIXI.Text( Str(i,2) ,style);
+        PixiTimer["s"][ Str(i,2) ] = new PIXI.Text( Str(i,2)+"：" ,style);
+        PixiTimer["m"][ Str(i,2) ] = new PIXI.Text( Str(i,2)+"：" ,style);
+        PixiTimer["h"][ Str(i,2) ] = new PIXI.Text( Str(i,2)+"：" ,style);
+
+        
+
+        PixiTimer["h"][ Str(i,2) ].x = 10;
+        PixiTimer["m"][ Str(i,2) ].x = 10 + 50;
+        PixiTimer["s"][ Str(i,2) ].x = 10 + 100;
+        PixiTimer["ms"][ Str(i,2) ].x = 10 + 155;
+        
+
+        PixiTimer.h[ Str(i,2) ].visible = false;
+        PixiTimer.m[ Str(i,2) ].visible = false;
+        PixiTimer.s[ Str(i,2) ].visible = false;
+        PixiTimer.ms[ Str(i,2) ].visible = false;
+
+        container.addChild(PixiTimer.h[ Str(i,2) ]);
+        container.addChild(PixiTimer.m[ Str(i,2) ]);
+        container.addChild(PixiTimer.s[ Str(i,2) ]);
+        container.addChild(PixiTimer.ms[ Str(i,2) ]);
+    }
+
+    PixiTimer.h[ "00" ].visible = true;
+    PixiTimer.m[ "00" ].visible = true;
+    PixiTimer.s[ "00" ].visible = true;
+    PixiTimer.ms[ "00" ].visible = true;
+
+    PIXI_obj.PixiTimer = PixiTimer;
+
+
+    function Str(word,num)
+    {
+        if(word.toString().length<num)
+        {
+            return Str("0" + word,num);
+        }
+
+        return word;
+    }
+
+    PIXI_obj.TimeRun = function()
+    {
+        var PixiTimer = PIXI_obj.PixiTimer;
+        var count = PIXI_obj.PixiTimer.count;
+
+
+        count.x++;
+        if(count.x>=60/10)
+        {
+            count.x = 0;
+            count.ms++;
+
+            var x = Math.floor(Math.random()*app.view.width);
+            var y = Math.floor(Math.random()*app.view.height);
+            
+            if( !PIXI_obj.HitCheck({"x":x,"y":y},PIXI_obj.heart) && 
+                !PIXI_obj.HitCheck({"x":x,"y":y},TRDLMenu) )
+            {
+                PIXI_obj.EnemySet(x,y);
+            }
+
+        }
+
+        if(count.ms>=10)
+        {
+            count.ms = 0;
+            count.s++;
+
+            
+
+        }
+        if(count.s>=60)
+        {
+            count.s = 0;
+            count.m++;
+        }
+        if(count.m>=60)
+        {
+            count.m = 0;
+            count.h++;
+        }
+        for(var i in PixiTimer.ms) PixiTimer.ms[i].visible = false;
+        for(var i in PixiTimer.s) PixiTimer.s[i].visible = false;
+        for(var i in PixiTimer.m) PixiTimer.m[i].visible = false;
+        for(var i in PixiTimer.h) PixiTimer.h[i].visible = false;
+
+
+        PixiTimer.ms[ Str(count.ms,2) ].visible = true;
+        PixiTimer.s[ Str(count.s,2) ].visible = true;
+        PixiTimer.m[ Str(count.m,2) ].visible = true;
+        PixiTimer.h[ Str(count.h,2) ].visible = true;
+
+
+        PIXI_obj.PixiTimer.count = count;
+    }
+
+
+
+    PIXI_obj.EnemySet = function(x,y)
+    {
+        var enemy = new PIXI.Sprite(loader.resources["bunny.png"].texture);
+        enemy.x = x;
+        enemy.y = y
+        enemy.life = true;
+        enemy.direction = (Math.floor(Math.random()*3)===1)?"x":"y";
+        enemy.ticker_count = 0;
+        enemy.move_number = 1;
+
+        var direction_change = [30,60,90];
+        enemy.direction_change = direction_change[ Math.floor(Math.random()*direction_change.length) ];
+
+        var move_change = [30,60,90];
+        enemy.move_change = move_change[ Math.floor(Math.random()*move_change.length) ];
+
+        enemy.anchor.set(0.5,0.5);
+
+        var heart = new PIXI.Graphics();
+        heart.beginFill(0xff0000,1);
+        heart.drawCircle(0,0,5);
+        heart.x = enemy.x;
+        heart.y = enemy.y;
+
+
+        PIXI_obj.EnemyList.push( {"enemy":enemy,"heart":heart} );
+
+        container.addChild(enemy);
+        container.addChild(heart);
+    }
+
+    PIXI_obj.ReGame = function()
+    {
+        for(var i in PIXI_obj.EnemyList )
+        {
+            PIXI_obj.EnemyList[i].enemy.life = false;
+            PIXI_obj.EnemyList[i].enemy.visible = false;
+            PIXI_obj.EnemyList[i].heart.visible = false;
+        }
+
+        PIXI_obj.CreateEnemy(PIXI_obj.app,PIXI_obj.heart,PIXI_obj.TRDLMenu);
+
+        var count = PIXI_obj.PixiTimer.count;
+        count.ms = 0;
+        count.s = 0;
+        count.m = 0;
+        count.h = 0;
+
+        PIXI_obj.GameOverMenu.visible = false;
+
+        PIXI_obj.ticker_pasue = false;
+    }
+
+
+    loader.add('bunny.png').load(()=>{
+        
+        var bunny = new PIXI.Sprite(loader.resources["bunny.png"].texture);
+
+        bunny.x = app.view.width/2 - bunny.width;
+        bunny.y = app.view.height/2 - bunny.height;
+        bunny.anchor.set(0.5,0.5);
+
+        var heart = new PIXI.Graphics();
+        heart.beginFill(0x0000ff,1);
+        heart.drawCircle(0,0,5);
+        heart.x = bunny.x;
+        heart.y = bunny.y;
+
+
+        PIXI_obj.ticker_pasue = false;
+        app.ticker.add( delta =>{
+
+            
+            if(PIXI_obj.ticker_pasue===true) return;
+
+            PIXI_obj.TimeRun();
+
+            bunny = PIXI_obj.bunny||bunny;
+
+            PIXI_obj.move = PIXI_obj.move||{
+                "ArrowUp":false,
+                "ArrowRight":false,
+                "ArrowDown":false,
+                "ArrowLeft":false
+            };
+
+            if(PIXI_obj.move.ArrowUp) bunny.y-=PIXI_obj.move_speed;
+            if(PIXI_obj.move.ArrowRight) bunny.x+=PIXI_obj.move_speed;
+            if(PIXI_obj.move.ArrowDown) bunny.y+=PIXI_obj.move_speed;
+            if(PIXI_obj.move.ArrowLeft) bunny.x-=PIXI_obj.move_speed;
+
+        
+            if(PIXI_obj.move.ArrowUp && 
+                bunny.y - bunny.height/2 < PIXI_obj.TRDLMenu.y + PIXI_obj.TRDLMenu.height && 
+                bunny.x < PIXI_obj.TRDLMenu.x + PIXI_obj.TRDLMenu.width )
+            {
+                bunny.y = PIXI_obj.TRDLMenu.y + PIXI_obj.TRDLMenu.height + bunny.height/2;
+            }
+            
+
+            if(PIXI_obj.move.ArrowLeft && 
+                bunny.x - bunny.width/2 < PIXI_obj.TRDLMenu.x + PIXI_obj.TRDLMenu.width && 
+                bunny.y < PIXI_obj.TRDLMenu.y + PIXI_obj.TRDLMenu.height )
+            {
+                bunny.x = PIXI_obj.TRDLMenu.x + PIXI_obj.TRDLMenu.width + bunny.width/2;
+            }
+
+            
+
+            if(bunny.x+bunny.width>app.view.width) bunny.x = app.view.width-bunny.width;
+            if(bunny.y+bunny.height>app.view.height) bunny.y = app.view.height-bunny.height;
+            if(bunny.x<bunny.width) bunny.x = bunny.width;
+            if(bunny.y<bunny.height) bunny.y = bunny.height;
+
+
+            for(var i in PIXI_obj.EnemyList )
+            {
+                PIXI_obj.EnemyMove(PIXI_obj.EnemyList[i].enemy,PIXI_obj.EnemyList[i].heart);
+
+                if( PIXI_obj.HitCheck( 
+                    PIXI_obj.EnemyList[i].heart.getBounds() ,
+                    PIXI_obj.heart) && 
+                PIXI_obj.EnemyList[i].enemy.life===true )
+                {
+                    
+                    console.log("GAME OVER");
+                    //app.ticker.stop();
+                    PIXI_obj.ticker_pasue = true;
+
+
+                    if(PIXI_obj.GameOverMenu)
+                    {
+                        PIXI_obj.GameOverMenu.visible = true;
+                    }
+                    else
+                    {
+                        var GameOverMenu = new PIXI.Container();
+                        GameOverMenu.x = app.view.width/2 - 100;
+                        GameOverMenu.y = 50;
+                        GameOverMenu.interactive = true;
+                        var style = {"fill":"#f00"};
+                        var text = new PIXI.Text("GAME OVER",style);
+                        GameOverMenu.addChild(text);
+                    
+                        var style = {"fill":"#fff"};
+                        var text2 = new PIXI.Text("重新開始",style);
+                        text2.interactive = true;
+                        text2.cursor = "pointer";
+                        text2.y = 30;
+                        text2.on("mouseover",e=>{
+                            e.currentTarget.tint = 0xffff00;
+                        });
+                        text2.on("mouseout",e=>{
+                            e.currentTarget.tint = 0xffffff;
+                        });
+                        text2.on("mousedown",e=>{
+                            PIXI_obj.ReGame();
+                        });
+                        
+                        GameOverMenu.addChild(text2);
+                        GameOverMenu.visible = true;
+                
+                        PIXI_obj.GameOverMenu = GameOverMenu;
+                
+                        container.addChild(GameOverMenu);
+                    }
+
+                }
+            }
+
+
+
+            PIXI_obj.heart.x = PIXI_obj.bunny.x;
+            PIXI_obj.heart.y = PIXI_obj.bunny.y;
+
+
+            
+        });
+        
+
+        container.addChild(bunny);
+        container.addChild(heart);
+
+        PIXI_obj.CreateEnemy(app,heart,TRDLMenu);
+
+        PIXI_obj.bunny = bunny;
+        PIXI_obj.heart = heart;
+    });
+
+    PIXI_obj.CreateEnemy = function(app,heart,TRDLMenu)
+    {
+        for(var i=0;i<10;i++)
+        {
+            var x = Math.floor(Math.random()*app.view.width);
+            var y = Math.floor(Math.random()*app.view.height);
+            
+            if( !PIXI_obj.HitCheck({"x":x,"y":y},heart) && 
+                !PIXI_obj.HitCheck({"x":x,"y":y},TRDLMenu) )
+            {
+                PIXI_obj.EnemySet(x,y);
+            }
+        }
+
+        
+    }
+
+
+    PIXI_obj.EnemyMove = function(enemy,heart)
+    {
+        enemy.ticker_count++;
+
+        if( enemy.ticker_count%enemy.move_change===0 )
+        {
+            enemy.move_number *= -1;
+        }
+
+        if( enemy.ticker_count%enemy.direction_change===0 )
+        {
+            enemy.direction = (enemy.direction==="x")?"y":"x";
+        }
+
+        enemy[enemy.direction]+=enemy.move_number;
+        
+        
+        if(enemy.x+enemy.width>app.view.width)
+        {
+            enemy.x = app.view.width-enemy.width;
+            enemy.move_number*=-1;
+        }
+        if(enemy.y+enemy.height>app.view.height)
+        {
+            enemy.y = app.view.height-enemy.height;
+            enemy.move_number*=-1;
+        }
+        if(enemy.x<enemy.width)
+        {
+            enemy.x = enemy.width;
+            enemy.move_number*=-1;
+        }
+        if(enemy.y<enemy.height)
+        {
+            enemy.y = enemy.height;
+            enemy.move_number*=-1;
+        }
+
+
+
+        heart.x = enemy.x;
+        heart.y = enemy.y;
+    }
+
+    
+
+    PIXI_obj.HitCheck = function(a, b)
+    {
+        if(typeof(a.getBounds)==="function") a = a.getBounds();
+
+        if(typeof(b.getBounds)==="function") b = b.getBounds();
+
+        a.width = a.width||1;
+        b.width = b.width||1;
+
+        a.height = a.height||1;
+        b.height = b.height||1;
+
+
+        var _return = 
+        a.x + a.width > b.x && 
+        a.x < b.x + b.width && 
+        a.y + a.height > b.y && 
+        a.y < b.y + b.height;
+
+        return _return;
+    }
+
+    PIXI_obj.AreaCheck = function(area,obj)
+    {
+        area = (typeof(area.getBounds)==="function")?area.getBounds():area.getBoundingClientRect();
+
+        obj = (typeof(obj.getBounds)==="function")?obj.getBounds():obj.getBoundingClientRect();
+
+        
+        if(obj.x + obj.width > area.width) obj.x = area.width - obj.width;
+        if(obj.x < obj.width) obj.x = obj.width;
+        if(obj.y + obj.height > area.height) obj.y = area.height - obj.height;
+        if(obj.y < obj.height) obj.y = obj.height;
+
+        
+    }
+
+    
+    
+    container.addChild(TRDLMenu);
+    app.stage.addChild(container);
+
+    
+
+    document.querySelector("#Main").appendChild( app.view );
+
+    
 }
 
 
