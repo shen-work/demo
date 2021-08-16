@@ -687,7 +687,7 @@ function Chat()
             "html":TextCr("textarea",{"value":""})
         },
         "SendBtn":{
-            "html":TextCr("button",{"value":"發言"},{"click":function(){
+            "html":TextCr("button",{"value":"發言"},{"click":function(e){
 
                 if(System.gapi.isSignedIn.get()!=true)
                 {
