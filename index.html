@@ -23,20 +23,20 @@
 <!--
 <script src="script.js"></script>
 <script type="text/jsx" src="babel.jsx"></script>
-
 -->
 
-<script type="text/babel">
-setTimeout(function(){
 
-    ReactDOM.render(
-  <h1>Hello, world!</h1>,
-  document.querySelector("body")
-);
 
-},5000);
 
-</script>
+
+<div id="example"></div>
+    <script type="text/babel">
+      // 程式碼寫在這邊！
+      ReactDOM.render(
+        <h1>Hello, world!</h1>,
+        document.getElementById('example')
+      );
+    </script>
 
 
 
