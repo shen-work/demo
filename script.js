@@ -18,10 +18,11 @@ var System = {
         "Shop":{"name":"購買商品功能"},
         "Car":{"name":"購物車功能"},
         "Stock":{"name":"庫存管理"},
+        //"ReactDemo":{"name":"ReactDemo"},
         "VueStock":{"name":"庫存管理(vue.js)"},
         "Order":{"name":"定單管理"},
         //"VueMenu":{"name":"vue.js"},
-        "PIXI_func":{"name":"PIXI測試"}
+        //"PIXI_func":{"name":"PIXI測試"}
     },
     "now_page":"",
     "ServerTime":firebase.database.ServerValue.TIMESTAMP,
@@ -1734,6 +1735,14 @@ function VueStock()
 }
 
 
+function ReactDemo()
+{
+    ReactFunc();
+    MainDivSetTimeout();
+}
+
+
+
 
 
 function VueMenu()
@@ -1838,6 +1847,9 @@ function VueMenu()
       VueApp = VueApp.mount('#v_div');
 
 }
+
+
+
 
 
 
@@ -2425,8 +2437,9 @@ function PIXI_func()
 
     document.querySelector("#Main").appendChild( app.view );
 
-    
 }
+
+
 
 
 
